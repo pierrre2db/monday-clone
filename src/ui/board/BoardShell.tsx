@@ -50,7 +50,57 @@ export default function BoardShell({ initialBoard, members }: { initialBoard: Bo
     setBoard((b) => ({ ...b, columns: [...b.columns, c] }));
   }
 
-  const shared = { board, members, saveCell, addItem };
+  async function deleteItem(id: string) {
+    try {
+      await api.deleteItem(id);
+      setBoard((b) => ({ ...b, items: b.items.filter((it) => it.id !== id) }));
+    } catch (e) { alert((e as Error).message); }
+  }
+  async function renameItem(id: string, name: string) {
+    const prev = board;
+    setBoard((b) => ({ ...b, items: b.items.map((it) => (it.id !== id ? it : { ...it, name })) }));
+    try { await api.renameItem(id, name); }
+    catch (e) { setBoard(prev); alert((e as Error).message); }
+  }
+  async function deleteColumn(id: string) {
+    if (!window.confirm("Delete this column? This will remove its data from every item.")) return;
+    try {
+      await api.deleteColumn(id);
+      setBoard((b) => ({
+        ...b,
+        columns: b.columns.filter((c) => c.id !== id),
+        items: b.items.map((it) => ({ ...it, cells: it.cells.filter((c) => c.columnId !== id) })),
+      }));
+    } catch (e) { alert((e as Error).message); }
+  }
+  async function renameColumn(id: string, name: string) {
+    const prev = board;
+    setBoard((b) => ({ ...b, columns: b.columns.map((c) => (c.id !== id ? c : { ...c, name })) }));
+    try { await api.updateColumn(id, { name }); }
+    catch (e) { setBoard(prev); alert((e as Error).message); }
+  }
+  async function deleteGroup(id: string) {
+    if (!window.confirm("Delete this group? This will remove all its items.")) return;
+    try {
+      await api.deleteGroup(id);
+      setBoard((b) => ({
+        ...b,
+        groups: b.groups.filter((g) => g.id !== id),
+        items: b.items.filter((it) => it.groupId !== id),
+      }));
+    } catch (e) { alert((e as Error).message); }
+  }
+  async function renameGroup(id: string, name: string) {
+    const prev = board;
+    setBoard((b) => ({ ...b, groups: b.groups.map((g) => (g.id !== id ? g : { ...g, name })) }));
+    try { await api.updateGroup(id, { name }); }
+    catch (e) { setBoard(prev); alert((e as Error).message); }
+  }
+
+  const shared = {
+    board, members, saveCell, addItem,
+    deleteItem, renameItem, deleteColumn, renameColumn, deleteGroup, renameGroup,
+  };
   return (
     <main style={{ padding: 20, fontFamily: "system-ui" }}>
       <h1>{board.name}</h1>
