@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Board Redesign</title>
+<meta name="description" content="Mockup avant/apres de la refonte UI du board Monday-clone, responsive desktop et mobile.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --bg: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f1f2f6;
+    --border: #e4e7ee;
+    --text: #1c1f26;
+    --text-muted: #6b7280;
+    --shadow: 0 1px 2px rgba(20,23,38,.04), 0 4px 16px rgba(20,23,38,.06);
+    --shadow-lg: 0 8px 30px rgba(20,23,38,.12);
+    --radius: 14px;
+    --radius-sm: 9px;
+    --accent: #6c5ce7;
+    /* status / group palette */
+    --c-blue:#4b8bff; --c-orange:#fdab3d; --c-red:#e74c6b; --c-green:#00c875;
+    --c-purple:#a25ddc; --c-teal:#00b8a3; --c-gray:#c3c8d4;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --bg:#14161c; --surface:#1c1f27; --surface-2:#242833; --border:#2f3441;
+      --text:#eef0f5; --text-muted:#9aa2b1;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.35);
+      --shadow-lg:0 8px 30px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161c; --surface:#1c1f27; --surface-2:#242833; --border:#2f3441;
+    --text:#eef0f5; --text-muted:#9aa2b1;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.35);
+    --shadow-lg:0 8px 30px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.45}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 16px 64px}
+
+  /* ---- top controls ---- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:3px}
+  .seg button{border:0;background:transparent;color:var(--text-muted);font:inherit;font-weight:600;font-size:13px;padding:7px 16px;border-radius:999px;cursor:pointer;transition:.15s}
+  .seg button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+  .icon-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow)}
+  .hint{font-size:12.5px;color:var(--text-muted);margin:0 0 18px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .hint b{color:var(--text)}
+
+  /* ---- board header ---- */
+  .board-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .board-emoji{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6c5ce7,#4b8bff);display:grid;place-items:center;font-size:22px;box-shadow:var(--shadow)}
+  .board-head h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.02em}
+  .board-head p{margin:2px 0 0;font-size:12.5px;color:var(--text-muted)}
+  .tabs{display:flex;gap:6px;margin:0 0 20px;flex-wrap:wrap}
+  .tab{font-size:13px;font-weight:600;color:var(--text-muted);padding:8px 14px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+  .tab.active{color:var(--text);background:var(--surface);border-color:var(--border);box-shadow:var(--shadow)}
+
+  /* ---- group ---- */
+  .group{margin-bottom:26px}
+  .group-title{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;margin:0 0 10px;padding-left:2px}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .count{font-size:12px;font-weight:600;color:var(--text-muted);background:var(--surface-2);padding:2px 9px;border-radius:999px}
+
+  /* ---- NEW: table (desktop) ---- */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--text-muted);padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+  tbody td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr{transition:background .12s}
+  tbody tr:hover{background:var(--surface-2)}
+  .item-name{font-weight:600}
+  td.sticky,th.sticky{position:sticky;left:0;background:var(--surface);z-index:1}
+  thead th.sticky{background:var(--surface-2)}
+
+  /* chips + avatars */
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#fff;padding:5px 12px;border-radius:999px;white-space:nowrap}
+  .pri{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;padding:5px 11px;border-radius:8px;border:1.5px solid}
+  .avatars{display:inline-flex}
+  .ava{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700;border:2px solid var(--surface);margin-left:-8px}
+  .ava:first-child{margin-left:0}
+  .date{color:var(--text-muted);font-variant-numeric:tabular-nums}
+  .bar{height:7px;border-radius:999px;background:var(--surface-2);overflow:hidden;min-width:64px}
+  .bar > i{display:block;height:100%;border-radius:999px}
+  .add-row td{padding:9px 14px}
+  .add-btn{border:0;background:transparent;color:var(--text-muted);font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+
+  /* ---- mobile cards (hidden desktop) ---- */
+  .cards{display:none;flex-direction:column;gap:12px}
+  .mcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+  .mcard h4{margin:0 0 10px;font-size:15px;font-weight:700}
+  .mrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 0;border-top:1px solid var(--border)}
+  .mrow:first-of-type{border-top:0}
+  .mrow .k{font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted)}
+
+  /* ---- kanban preview ---- */
+  .kan{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+  .lane{flex:0 0 250px;scroll-snap-align:start;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
+  .lane-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin:2px 4px 10px}
+  .lane-h .count{margin-left:auto}
+  .kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);padding:11px;margin-bottom:9px}
+  .kcard .t{font-weight:600;font-size:13.5px;margin-bottom:9px}
+  .kcard .meta{display:flex;align-items:center;justify-content:space-between}
+
+  .section-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin:34px 0 12px}
+
+  /* ---- OLD skin (avant) ---- */
+  .old .card,.old .mcard,.old .lane,.old .kcard{border-radius:0;box-shadow:none;border-color:#000}
+  .old table{font-size:13px}
+  .old thead th{background:#c0c0c0;color:#000;text-transform:none;letter-spacing:0;font-size:13px;border:1px solid #000}
+  .old tbody td{border:1px solid #000}
+  .old .chip{border-radius:2px;padding:3px 6px;font-weight:400}
+  .old .avatars{display:block}
+  .old .ava{all:unset;display:inline-block;font-size:12px;color:#000}
+  .old .ava::after{content:attr(data-name)"\A"}
+  .old .pri{border-radius:0;border-width:1px}
+  .old .board-emoji{background:#999;border-radius:0}
+  .old .tab,.old .seg,.old .icon-btn{border-radius:0}
+  .old .bar{border-radius:0}
+  .old .kan{gap:4px}
+  .old .board-head h1{font-weight:400}
+
+  @media (max-width:640px){
+    .desktop-only{display:none}
+    .cards{display:flex}
+    .board-head h1{font-size:19px}
+    .wrap{padding:16px 16px 56px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Style">
+      <button id="btn-old" aria-pressed="false">Avant</button>
+      <button id="btn-new" aria-pressed="true">Apres</button>
+    </div>
+    <button class="icon-btn" id="theme" title="Clair / sombre" aria-label="Basculer clair sombre">🌙</button>
+  </div>
+
+  <p class="hint">👉 <b>Redimensionne</b> la fenetre (ou ouvre sur telephone) : sous 640px la table devient des <b>cartes empilees</b>. Bascule <b>Avant/Apres</b> et <b>clair/sombre</b>.</p>
+
+  <div id="skin">
+    <div class="board-head">
+      <div class="board-emoji">🚀</div>
+      <div>
+        <h1>Product Roadmap</h1>
+        <p>2 groupes · 4 items · mis a jour aujourd'hui</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active">Table</div>
+      <div class="tab">Kanban</div>
+      <div class="tab">Calendrier</div>
+    </div>
+
+    <!-- GROUP: To do -->
+    <div class="group">
+      <div class="group-title"><span class="dot" style="background:var(--c-blue)"></span> To do <span class="count">2</span></div>
+
+      <!-- desktop table -->
+      <div class="card desktop-only">
+        <table>
+          <thead>
+            <tr>
+              <th class="sticky">Item</th><th>Statut</th><th>Priorite</th><th>Owner</th><th>Echeance</th><th>Progression</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sticky item-name">Design login</td>
+              <td><span class="chip" style="background:var(--c-orange)">Working on it</span></td>
+              <td><span class="pri" style="color:var(--c-red);border-color:var(--c-red)">Haute</span></td>
+              <td><span class="avatars"><span class="ava" style="background:var(--c-green)" data-name="Alice">AL</span><span class="ava" style="background:var(--c-blue)" data-name="Bob">BO</span></span></td>
+              <td class="date">1 oct 2026</td>
+              <td><span class="bar"><i style="width:60%;background:var(--c-orange)"></i></span></td>
+            </tr>
+            <tr>
+              <td class="sticky item-name">Recherche utilisateurs</td>
+              <td><span class="chip" style="background:var(--c-gray);color:#3a3f4b">—</span></td>
+              <td><span class="pri" style="color:var(--c-orange);border-color:var(--c-orange)">Moyenne</span></td>
+              <td><span class="avatars"><span class="ava" style="background:var(--c-purple)" data-name="Chloe">CH</span></span></td>
+              <td class="date">8 oct 2026</td>
+              <td><span class="bar"><i style="width:20%;background:var(--c-blue)"></i></span></td>
+            </tr>
+            <tr class="add-row"><td class="sticky" colspan="6"><button class="add-btn">+ Ajouter un item</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- mobile cards -->
+      <div class="cards">
+        <div class="mcard">
+          <h4>Design login</h4>
+          <div class="mrow"><span class="k">Statut</span><span class="chip" style="background:var(--c-orange)">Working on it</span></div>
+          <div class="mrow"><span class="k">Priorite</span><span class="pri" style="color:var(--c-red);border-color:var(--c-red)">Haute</span></div>
+          <div class="mrow"><span class="k">Owner</span><span class="avatars"><span class="ava" style="background:var(--c-green)" data-name="Alice">AL</span><span class="ava" style="background:var(--c-blue)" data-name="Bob">BO</span></span></div>
+          <div class="mrow"><span class="k">Echeance</span><span class="date">1 oct 2026</span></div>
+        </div>
+        <div class="mcard">
+          <h4>Recherche utilisateurs</h4>
+          <div class="mrow"><span class="k">Statut</span><span class="chip" style="background:var(--c-gray);color:#3a3f4b">—</span></div>
+          <div class="mrow"><span class="k">Priorite</span><span class="pri" style="color:var(--c-orange);border-color:var(--c-orange)">Moyenne</span></div>
+          <div class="mrow"><span class="k">Owner</span><span class="avatars"><span class="ava" style="background:var(--c-purple)" data-name="Chloe">CH</span></span></div>
+          <div class="mrow"><span class="k">Echeance</span><span class="date">8 oct 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROUP: In progress -->
+    <div class="group">
+      <div class="group-title"><span class="dot" style="background:var(--c-orange)"></span> In progress <span class="count">2</span></div>
+      <div class="card desktop-only">
+        <table>
+          <thead>
+            <tr><th class="sticky">Item</th><th>Statut</th><th>Priorite</th><th>Owner</th><th>Echeance</th><th>Progression</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sticky item-name">Build API</td>
+              <td><span class="chip" style="background:var(--c-green)">Done</span></td>
+              <td><span class="pri" style="color:var(--c-red);border-color:var(--c-red)">Haute</span></td>
+              <td><span class="avatars"><span class="ava" style="background:var(--c-blue)" data-name="Bob">BO</span></span></td>
+              <td class="date">28 sep 2026</td>
+              <td><span class="bar"><i style="width:100%;background:var(--c-green)"></i></span></td>
+            </tr>
+            <tr>
+              <td class="sticky item-name">Setup CI/CD</td>
+              <td><span class="chip" style="background:var(--c-red)">Stuck</span></td>
+              <td><span class="pri" style="color:var(--c-green);border-color:var(--c-green)">Basse</span></td>
+              <td><span class="avatars"><span class="ava" style="background:var(--c-green)" data-name="Alice">AL</span></span></td>
+              <td class="date">3 oct 2026</td>
+              <td><span class="bar"><i style="width:40%;background:var(--c-red)"></i></span></td>
+            </tr>
+            <tr class="add-row"><td class="sticky" colspan="6"><button class="add-btn">+ Ajouter un item</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cards">
+        <div class="mcard">
+          <h4>Build API</h4>
+          <div class="mrow"><span class="k">Statut</span><span class="chip" style="background:var(--c-green)">Done</span></div>
+          <div class="mrow"><span class="k">Priorite</span><span class="pri" style="color:var(--c-red);border-color:var(--c-red)">Haute</span></div>
+          <div class="mrow"><span class="k">Owner</span><span class="avatars"><span class="ava" style="background:var(--c-blue)" data-name="Bob">BO</span></span></div>
+          <div class="mrow"><span class="k">Echeance</span><span class="date">28 sep 2026</span></div>
+        </div>
+        <div class="mcard">
+          <h4>Setup CI/CD</h4>
+          <div class="mrow"><span class="k">Statut</span><span class="chip" style="background:var(--c-red)">Stuck</span></div>
+          <div class="mrow"><span class="k">Priorite</span><span class="pri" style="color:var(--c-green);border-color:var(--c-green)">Basse</span></div>
+          <div class="mrow"><span class="k">Owner</span><span class="avatars"><span class="ava" style="background:var(--c-green)" data-name="Alice">AL</span></span></div>
+          <div class="mrow"><span class="k">Echeance</span><span class="date">3 oct 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANBAN preview -->
+    <div class="section-label">Vue Kanban (scroll horizontal au doigt)</div>
+    <div class="kan">
+      <div class="lane">
+        <div class="lane-h"><span class="dot" style="background:var(--c-gray)"></span> No status <span class="count">1</span></div>
+        <div class="kcard"><div class="t">Recherche utilisateurs</div><div class="meta"><span class="pri" style="color:var(--c-orange);border-color:var(--c-orange)">Moyenne</span><span class="avatars"><span class="ava" style="background:var(--c-purple)" data-name="Chloe">CH</span></span></div></div>
+      </div>
+      <div class="lane">
+        <div class="lane-h"><span class="dot" style="background:var(--c-orange)"></span> Working on it <span class="count">1</span></div>
+        <div class="kcard"><div class="t">Design login</div><div class="meta"><span class="pri" style="color:var(--c-red);border-color:var(--c-red)">Haute</span><span class="avatars"><span class="ava" style="background:var(--c-green)" data-name="Alice">AL</span><span class="ava" style="background:var(--c-blue)" data-name="Bob">BO</span></span></div></div>
+      </div>
+      <div class="lane">
+        <div class="lane-h"><span class="dot" style="background:var(--c-red)"></span> Stuck <span class="count">1</span></div>
+        <div class="kcard"><div class="t">Setup CI/CD</div><div class="meta"><span class="pri" style="color:var(--c-green);border-color:var(--c-green)">Basse</span><span class="avatars"><span class="ava" style="background:var(--c-green)" data-name="Alice">AL</span></span></div></div>
+      </div>
+      <div class="lane">
+        <div class="lane-h"><span class="dot" style="background:var(--c-green)"></span> Done <span class="count">1</span></div>
+        <div class="kcard"><div class="t">Build API</div><div class="meta"><span class="pri" style="color:var(--c-red);border-color:var(--c-red)">Haute</span><span class="avatars"><span class="ava" style="background:var(--c-blue)" data-name="Bob">BO</span></span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var skin=document.getElementById('skin');
+  var bOld=document.getElementById('btn-old'), bNew=document.getElementById('btn-new');
+  function setSkin(old){
+    skin.classList.toggle('old',old);
+    bOld.setAttribute('aria-pressed',old);
+    bNew.setAttribute('aria-pressed',!old);
+  }
+  bOld.onclick=function(){setSkin(true)};
+  bNew.onclick=function(){setSkin(false)};
+
+  var root=document.documentElement, tbtn=document.getElementById('theme');
+  function apply(t){root.setAttribute('data-theme',t);tbtn.textContent=t==='dark'?'☀️':'🌙';try{localStorage.setItem('mk-theme',t)}catch(e){}}
+  var saved;try{saved=localStorage.getItem('mk-theme')}catch(e){}
+  if(saved)apply(saved);
+  else apply(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  tbtn.onclick=function(){apply(root.getAttribute('data-theme')==='dark'?'light':'dark')};
+</script>
+</body>
+</html>
