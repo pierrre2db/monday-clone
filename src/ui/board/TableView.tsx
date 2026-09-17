@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { BoardFull, Member } from "./types";
 import { cellRegistry } from "./cells/registry";
+import ColumnSettings from "./ColumnSettings";
 
 type Props = {
   board: BoardFull; members: Member[];
@@ -11,13 +12,15 @@ type Props = {
   renameItem: (id: string, name: string) => void;
   deleteColumn: (id: string) => void;
   renameColumn: (id: string, name: string) => void;
+  updateColumnSettings: (id: string, settings: Record<string, unknown>) => void;
   deleteGroup: (id: string) => void;
   renameGroup: (id: string, name: string) => void;
 };
 export default function TableView({
   board, members, saveCell, addItem,
-  deleteItem, renameItem, deleteColumn, renameColumn, deleteGroup, renameGroup,
+  deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
 }: Props) {
+  const [settingsColId, setSettingsColId] = useState<string | null>(null);
   return (
     <div style={{ display: "grid", gap: 24 }}>
       {board.groups.map((group) => {
@@ -44,7 +47,7 @@ export default function TableView({
                 <tr>
                   <th style={cellTh}>Item</th>
                   {board.columns.map((c) => (
-                    <th key={c.id} style={cellTh}>
+                    <th key={c.id} style={{ ...cellTh, position: "relative" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <InlineEditable
                           key={c.name}
@@ -52,6 +55,15 @@ export default function TableView({
                           onCommit={(name) => renameColumn(c.id, name)}
                           style={colNameInput}
                         />
+                        {(c.type === "status" || c.type === "dropdown") && (
+                          <button
+                            onClick={() => setSettingsColId((id) => (id === c.id ? null : c.id))}
+                            title="Column settings"
+                            style={xButton}
+                          >
+                            ⚙
+                          </button>
+                        )}
                         <button
                           onClick={() => deleteColumn(c.id)}
                           title="Delete column"
@@ -60,6 +72,16 @@ export default function TableView({
                           ×
                         </button>
                       </div>
+                      {settingsColId === c.id && (
+                        <ColumnSettings
+                          column={c}
+                          onSave={(settings) => {
+                            updateColumnSettings(c.id, settings);
+                            setSettingsColId(null);
+                          }}
+                          onClose={() => setSettingsColId(null)}
+                        />
+                      )}
                     </th>
                   ))}
                 </tr>

@@ -79,6 +79,12 @@ export default function BoardShell({ initialBoard, members }: { initialBoard: Bo
     try { await api.updateColumn(id, { name }); }
     catch (e) { setBoard(prev); alert((e as Error).message); }
   }
+  async function updateColumnSettings(id: string, settings: Record<string, unknown>) {
+    const prev = board;
+    setBoard((b) => ({ ...b, columns: b.columns.map((c) => (c.id !== id ? c : { ...c, settings })) }));
+    try { await api.updateColumn(id, { settings }); }
+    catch (e) { setBoard(prev); alert((e as Error).message); }
+  }
   async function deleteGroup(id: string) {
     if (!window.confirm("Delete this group? This will remove all its items.")) return;
     try {
@@ -99,7 +105,7 @@ export default function BoardShell({ initialBoard, members }: { initialBoard: Bo
 
   const shared = {
     board, members, saveCell, addItem,
-    deleteItem, renameItem, deleteColumn, renameColumn, deleteGroup, renameGroup,
+    deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
   };
   return (
     <main style={{ padding: 20, fontFamily: "system-ui" }}>
