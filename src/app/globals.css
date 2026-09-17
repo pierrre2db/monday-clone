@@ -177,6 +177,8 @@ textarea {
   color: var(--text);
   margin-right: 6px;
   margin-bottom: 4px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .cell-file-input-label {
@@ -199,4 +201,251 @@ textarea {
 
 .cell-file-input-label input[type="file"] {
   display: none;
+}
+
+/* ---- table view (group / card / table / mobile cards) ---- */
+.group {
+  margin-bottom: 26px;
+  /* Grid items default to min-width:auto, which lets the wide table's
+     max-content size blow out the whole page instead of scrolling inside
+     .table-scroll. Force it to shrink to the grid track's actual size. */
+  min-width: 0;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 15px;
+  margin: 0 0 10px;
+  padding-left: 2px;
+}
+
+.group-title .dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.group-title .count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.table-view {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.table-view thead th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 11px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table-view tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table-view tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-view tbody tr {
+  transition: background 0.12s;
+}
+
+.table-view tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.table-view td.sticky-col,
+.table-view th.sticky-col {
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.table-view thead th.sticky-col {
+  background: var(--surface-2);
+  z-index: 2;
+}
+
+.table-view .add-row td {
+  padding: 9px 14px;
+}
+
+.add-btn {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.add-btn:hover {
+  color: var(--text);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.x-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+}
+
+.x-btn:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.inline-input {
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  min-width: 0;
+  flex: 1;
+}
+
+.inline-input:hover,
+.inline-input:focus {
+  border-color: var(--border);
+  background: var(--surface);
+  outline: none;
+}
+
+.inline-input--group {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.inline-input--col {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.inline-input--item {
+  font-weight: 600;
+}
+
+.item-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- mobile stacked cards (hidden on desktop) ---- */
+.mobile-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.mcard-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.mrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+}
+
+.mrow:first-of-type {
+  border-top: 0;
+}
+
+.mrow .k {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  flex: none;
+}
+
+.mrow-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.mobile-add-btn {
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .desktop-only {
+    display: none;
+  }
+  .mobile-cards {
+    display: flex;
+  }
 }
