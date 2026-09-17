@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local file uploads (dev-only, mirrors UPLOAD_DIR override)
+/.uploads
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
