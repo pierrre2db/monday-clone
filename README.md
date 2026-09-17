@@ -1,41 +1,87 @@
 # Monday Clone
 
-Self-hosted work-management app (boards, typed columns, Table/Kanban/Calendar views).
+A self-hosted, Docker-deployable work-management app inspired by Monday.com — boards with
+typed columns and **Table / Kanban / Calendar** views. Runs on a VPS or locally with one command.
 
-## Run with Docker (VPS or macOS)
+> One shared password gates the whole instance (no per-user accounts yet). Ideal for a
+> trusted team behind HTTPS. See the [roadmap](#roadmap).
+
+## Features
+
+- **Boards** → groups → items → **typed columns**: text, status, person, date, number,
+  dropdown/priority, checkbox, timeline, files, link, tags
+- **Three views** over the same data: editable **Table** (sticky first column), drag-and-drop
+  **Kanban** (drag a card to change its status), and **Calendar** (by date/timeline column)
+- **Colored status chips**, **avatar assignees**, editable status/dropdown labels
+- **File uploads** stored on a local volume
+- **Members** management for the person column
+- **Light / dark theme** (follows system, toggle persists) and a **responsive** UI —
+  the table becomes stacked cards on mobile, no horizontal overflow
+- **Single-password auth** (signed session cookie)
+- Full CRUD from the UI: create/rename/delete boards, groups, columns, items
+
+## Quick start (Docker)
 
 ```bash
-cp .env.example .env   # set APP_PASSWORD and SESSION_SECRET
+git clone <this-repo-url> monday-clone
+cd monday-clone
+cp .env.example .env          # then edit .env — set APP_PASSWORD and SESSION_SECRET
 docker compose up -d --build
-docker compose exec app npm run db:seed   # optional demo board
+docker compose exec app npm run db:seed   # optional: demo board
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and sign in with `APP_PASSWORD`.
+Open **http://localhost:3000** and sign in with `APP_PASSWORD`.
 
-## Local dev
+> Port 3000 already taken? In `docker-compose.yml` (service `app`) change `"3000:3000"` to
+> `"4000:3000"`, then `docker compose up -d`. App is then on http://localhost:4000.
+
+## Configuration
+
+| Var | Meaning | Default |
+| --- | --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://monday:monday@db:5432/monday?schema=public` |
+| `APP_PASSWORD` | Single shared instance password | `change-me` — **change it** |
+| `SESSION_SECRET` | Cookie signing secret (long random) | generate one |
+| `UPLOAD_DIR` | File storage path | `/data/uploads` |
+| `MAX_UPLOAD_BYTES` | Max upload size (bytes) | `10485760` (10 MB) |
+
+Generate a secret: `openssl rand -base64 32`.
+**Before exposing publicly**, change `APP_PASSWORD` and set a real `SESSION_SECRET`, and put
+an HTTPS reverse proxy in front (see the manual).
+
+## Documentation
+
+- **[User & admin manual (MANUAL.md)](MANUAL.md)** — full guide: usage, configuration,
+  backups, updates, VPS deployment, troubleshooting, architecture.
+
+## Local development
 
 ```bash
-docker compose up -d db
-cp .env.example .env    # point DATABASE_URL at localhost:5432
+docker compose up -d db          # just PostgreSQL
+cp .env.example .env             # point DATABASE_URL at localhost:5432
 npx prisma migrate deploy
+npm install
 npm run db:seed
-npm run dev
+npm run dev                      # http://localhost:3000
 ```
 
-## Environment
+Tests: `npm test` · Types: `npx tsc --noEmit` · Build: `npm run build`.
 
-| Var | Meaning |
-| --- | --- |
-| `DATABASE_URL` | Postgres connection string |
-| `APP_PASSWORD` | single shared instance password |
-| `SESSION_SECRET` | cookie signing secret (long random) |
-| `UPLOAD_DIR` | file storage path (default `/data/uploads`) |
-| `MAX_UPLOAD_BYTES` | max upload size (default `10485760`) |
+## Tech stack
 
-Data persists in Docker volumes `pgdata` and `uploads`.
+Next.js (App Router) · React · TypeScript · Prisma · PostgreSQL · Docker Compose.
+Cell values are stored as JSON, validated per column type. See MANUAL.md § Architecture.
 
-## Tests
+## Data & backups
 
-```bash
-npm test
-```
+Data lives in Docker volumes `pgdata` (database) and `uploads` (files). `docker compose down`
+keeps them; `down -v` deletes them. Backup commands are in the manual.
+
+## Roadmap
+
+Per-user accounts + roles, automations, real-time (websockets), row/column drag-reorder,
+image avatars, search/filters. Contributions welcome.
+
+## License
+
+[MIT](LICENSE) © Pierre De Dobbeleer
