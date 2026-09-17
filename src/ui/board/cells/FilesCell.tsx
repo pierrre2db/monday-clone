@@ -14,9 +14,16 @@ export function FilesEditor({ value, onChange }: EditorProps) {
     onChange({ files: [...files, ref] });
   }
   return (
-    <span>
-      {files.map((f) => <a key={f.id} href={`/api/upload?id=${f.id}`} style={{ marginRight: 6 }}>{f.name}</a>)}
-      <input type="file" onChange={upload} />
+    <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "center", gap: 0 }}>
+      {files.map((f) => (
+        <a key={f.id} href={`/api/upload?id=${f.id}`} className="cell-file-chip">
+          {f.name}
+        </a>
+      ))}
+      <label className="cell-file-input-label">
+        + File
+        <input type="file" onChange={upload} />
+      </label>
     </span>
   );
 }

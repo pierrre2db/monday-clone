@@ -81,3 +81,122 @@ select,
 textarea {
   font-family: inherit;
 }
+
+/* cell editor inputs (text/number/link/tags/date/timeline) */
+.cell-input {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.cell-input:focus {
+  border: 1px solid var(--accent);
+}
+
+.cell-input--date {
+  color-scheme: light;
+  width: auto;
+}
+
+:root[data-theme="dark"] .cell-input--date,
+:root:not([data-theme="light"]) .cell-input--date {
+  color-scheme: dark;
+}
+
+.cell-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c-green);
+  cursor: pointer;
+}
+
+.cell-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 30px;
+}
+
+.cell-trigger:hover {
+  background: var(--surface-2);
+}
+
+.cell-trigger-muted {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.cell-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+}
+
+.cell-option-row:hover {
+  background: var(--surface-2);
+}
+
+.cell-option-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.cell-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  margin-right: 6px;
+  margin-bottom: 4px;
+}
+
+.cell-file-input-label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.cell-file-input-label:hover {
+  background: var(--surface-2);
+}
+
+.cell-file-input-label input[type="file"] {
+  display: none;
+}
