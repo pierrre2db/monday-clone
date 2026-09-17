@@ -18,4 +18,16 @@ export const api = {
   updateItem: (id: string, data: object) =>
     fetch(`/api/items/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json),
+  deleteItem: (id: string) => fetch(`/api/items/${id}`, { method: "DELETE" }).then(json),
+  renameItem: (id: string, name: string) =>
+    fetch(`/api/items/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }) }).then(json),
+  deleteColumn: (id: string) => fetch(`/api/columns/${id}`, { method: "DELETE" }).then(json),
+  updateColumn: (id: string, data: object) =>
+    fetch(`/api/columns/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify(data) }).then(json),
+  deleteGroup: (id: string) => fetch(`/api/groups/${id}`, { method: "DELETE" }).then(json),
+  updateGroup: (id: string, data: object) =>
+    fetch(`/api/groups/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify(data) }).then(json),
 };
