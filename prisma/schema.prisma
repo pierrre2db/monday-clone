@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+}
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  groups      Group[]
+  columns     Column[]
+  items       Item[]
+}
+
+model Group {
+  id       String @id @default(cuid())
+  boardId  String
+  name     String
+  color    String @default("#579bfc")
+  position Int
+  board    Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  items    Item[]
+  @@index([boardId])
+}
+
+model Column {
+  id       String @id @default(cuid())
+  boardId  String
+  name     String
+  type     String
+  settings Json   @default("{}")
+  position Int
+  board    Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cells    CellValue[]
+  @@index([boardId])
+}
+
+model Item {
+  id        String   @id @default(cuid())
+  boardId   String
+  groupId   String
+  name      String
+  position  Int
+  createdAt DateTime @default(now())
+  board     Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  group     Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  cells     CellValue[]
+  @@index([boardId])
+  @@index([groupId])
+}
+
+model CellValue {
+  id       String @id @default(cuid())
+  itemId   String
+  columnId String
+  value    Json
+  item     Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+  @@unique([itemId, columnId])
+  @@index([columnId])
+}
+
+model Member {
+  id          String @id @default(cuid())
+  name        String
+  avatarColor String @default("#00c875")
+}
