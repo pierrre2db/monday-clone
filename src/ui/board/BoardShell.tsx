@@ -6,11 +6,14 @@ import TableView from "./TableView";
 import KanbanView from "./KanbanView";
 import CalendarView from "./CalendarView";
 import Toolbar from "./Toolbar";
+import MembersPanel from "./MembersPanel";
 import { api } from "./api";
 
-export default function BoardShell({ initialBoard, members }: { initialBoard: BoardFull; members: Member[] }) {
+export default function BoardShell({ initialBoard, members: initialMembers }: { initialBoard: BoardFull; members: Member[] }) {
   const [board, setBoard] = useState<BoardFull>(initialBoard);
+  const [members, setMembers] = useState<Member[]>(initialMembers);
   const [view, setView] = useState<ViewKind>("table");
+  const [membersOpen, setMembersOpen] = useState(false);
 
   function setCellLocal(itemId: string, columnId: string, value: Record<string, unknown>) {
     setBoard((b) => ({
@@ -103,6 +106,17 @@ export default function BoardShell({ initialBoard, members }: { initialBoard: Bo
     catch (e) { setBoard(prev); alert((e as Error).message); }
   }
 
+  async function addMember(name: string) {
+    const m = (await api.addMember(name)) as Member;
+    setMembers((ms) => [...ms, m]);
+  }
+  async function deleteMember(id: string) {
+    const prev = members;
+    setMembers((ms) => ms.filter((m) => m.id !== id));
+    try { await api.deleteMember(id); }
+    catch (e) { setMembers(prev); alert((e as Error).message); }
+  }
+
   const shared = {
     board, members, saveCell, addItem,
     deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
@@ -110,7 +124,20 @@ export default function BoardShell({ initialBoard, members }: { initialBoard: Bo
   return (
     <main style={{ padding: 20, fontFamily: "system-ui" }}>
       <h1>{board.name}</h1>
-      <ViewSwitcher value={view} onChange={setView} />
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <ViewSwitcher value={view} onChange={setView} />
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <button onClick={() => setMembersOpen((o) => !o)}>Members</button>
+          {membersOpen && (
+            <MembersPanel
+              members={members}
+              onAdd={addMember}
+              onDelete={deleteMember}
+              onClose={() => setMembersOpen(false)}
+            />
+          )}
+        </div>
+      </div>
       <Toolbar onAddColumn={addColumn} onAddGroup={addGroup} />
       {view === "table" && <TableView {...shared} />}
       {view === "kanban" && <KanbanView {...shared} />}

@@ -30,4 +30,8 @@ export const api = {
   updateGroup: (id: string, data: object) =>
     fetch(`/api/groups/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json),
+  addMember: (name: string) =>
+    fetch("/api/members", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }) }).then(json),
+  deleteMember: (id: string) => fetch(`/api/members/${id}`, { method: "DELETE" }).then(json),
 };
