@@ -3,6 +3,7 @@ import { useState } from "react";
 import { DndContext, type DragEndEvent, useDroppable, useDraggable } from "@dnd-kit/core";
 import type { BoardFull, Member } from "./types";
 import type { StatusLabel } from "@/lib/columns/types";
+import { AvatarStack } from "@/ui/kit/Avatar";
 
 type Props = {
   board: BoardFull; members: Member[];
@@ -10,13 +11,15 @@ type Props = {
   addItem: (groupId: string) => void;
 };
 
-export default function KanbanView({ board, saveCell }: Props) {
+export default function KanbanView({ board, members, saveCell }: Props) {
   const statusCols = board.columns.filter((c) => c.type === "status");
   const [statusColId, setStatusColId] = useState(statusCols[0]?.id ?? "");
   const col = board.columns.find((c) => c.id === statusColId);
-  if (!col) return <p>Add a Status column to use Kanban.</p>;
+  if (!col) return <p className="empty-state">Add a Status column to use Kanban.</p>;
   const labels = (col.settings.labels as StatusLabel[]) ?? [];
-  const lanes = [{ id: "", label: "No status", color: "#c4c4c4" }, ...labels];
+  const lanes = [{ id: "", label: "No status", color: "var(--c-gray)" }, ...labels];
+
+  const personCol = board.columns.find((c) => c.type === "person");
 
   function onDragEnd(e: DragEndEvent) {
     const itemId = String(e.active.id);
@@ -27,18 +30,27 @@ export default function KanbanView({ board, saveCell }: Props) {
   return (
     <div>
       {statusCols.length > 1 && (
-        <select value={statusColId} onChange={(e) => setStatusColId(e.target.value)}>
+        <select className="view-select" value={statusColId} onChange={(e) => setStatusColId(e.target.value)}>
           {statusCols.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       )}
       <DndContext onDragEnd={onDragEnd}>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+        <div className="kan">
           {lanes.map((lane) => {
             const items = board.items.filter((it) => {
               const v = it.cells.find((c) => c.columnId === col.id)?.value as { labelId?: string } | undefined;
               return (v?.labelId ?? "") === lane.id;
             });
-            return <Lane key={lane.id || "none"} lane={lane} itemNames={items.map((i) => ({ id: i.id, name: i.name }))} />;
+            const cards = items.map((i) => {
+              const assignees = personCol
+                ? (((i.cells.find((c) => c.columnId === personCol.id)?.value as { memberIds?: string[] } | undefined)
+                    ?.memberIds ?? [])
+                    .map((mid) => members.find((m) => m.id === mid))
+                    .filter((m): m is Member => Boolean(m)))
+                : [];
+              return { id: i.id, name: i.name, assignees };
+            });
+            return <Lane key={lane.id || "none"} lane={lane} cards={cards} />;
           })}
         </div>
       </DndContext>
@@ -46,23 +58,39 @@ export default function KanbanView({ board, saveCell }: Props) {
   );
 }
 
-function Lane({ lane, itemNames }: { lane: { id: string; label: string; color: string }; itemNames: { id: string; name: string }[] }) {
+function Lane({
+  lane, cards,
+}: {
+  lane: { id: string; label: string; color: string };
+  cards: { id: string; name: string; assignees: Member[] }[];
+}) {
   const { setNodeRef, isOver } = useDroppable({ id: lane.id });
   return (
-    <div ref={setNodeRef} style={{ minWidth: 200, background: isOver ? "#eef" : "#f5f6f8", padding: 8, borderRadius: 8 }}>
-      <h4 style={{ color: lane.color }}>{lane.label}</h4>
-      {itemNames.map((i) => <Card key={i.id} id={i.id} name={i.name} />)}
+    <div ref={setNodeRef} className="lane" style={isOver ? { borderColor: "var(--accent)" } : undefined}>
+      <div className="lane-h">
+        <span className="dot" style={{ background: lane.color }} />
+        {lane.label}
+        <span className="count">{cards.length}</span>
+      </div>
+      {cards.map((c) => <Card key={c.id} id={c.id} name={c.name} assignees={c.assignees} />)}
     </div>
   );
 }
 
-function Card({ id, name }: { id: string; name: string }) {
+function Card({ id, name, assignees }: { id: string; name: string; assignees: Member[] }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
-  const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
+  const style: React.CSSProperties = {
+    cursor: "grab",
+    ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)`, boxShadow: "var(--shadow-lg)" } : undefined),
+  };
   return (
-    <div ref={setNodeRef} {...listeners} {...attributes}
-      style={{ ...style, background: "#fff", border: "1px solid #e6e9ef", borderRadius: 6, padding: 8, marginBottom: 6, cursor: "grab" }}>
-      {name}
+    <div ref={setNodeRef} {...listeners} {...attributes} className="kcard" style={style}>
+      <div className="t">{name}</div>
+      {assignees.length > 0 && (
+        <div className="meta" style={{ justifyContent: "flex-end" }}>
+          <AvatarStack members={assignees.map((m) => ({ id: m.id, name: m.name, avatarColor: m.avatarColor }))} size={24} />
+        </div>
+      )}
     </div>
   );
 }

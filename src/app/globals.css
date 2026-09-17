@@ -441,11 +441,240 @@ textarea {
   align-self: flex-start;
 }
 
+/* ---- shared small controls (kanban / calendar toolbars) ---- */
+.empty-state {
+  color: var(--text-muted);
+  font-size: 13.5px;
+  padding: 24px;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+
+.view-select {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+
+.view-select:hover {
+  background: var(--surface-2);
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+}
+
+.icon-btn:hover {
+  background: var(--surface-2);
+}
+
+/* ---- kanban view ---- */
+.kan {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lane {
+  flex: 0 0 250px;
+  scroll-snap-align: start;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  transition: border-color 0.12s;
+}
+
+.lane-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  margin: 2px 4px 10px;
+}
+
+.lane-h .dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.lane-h .count {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.kcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 11px;
+  margin-bottom: 9px;
+}
+
+.kcard .t {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.kcard .meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 9px;
+}
+
+/* ---- calendar view ---- */
+.cal-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cal-toolbar .view-select {
+  margin-bottom: 0;
+  margin-left: auto;
+}
+
+.cal-grid {
+  padding: 10px;
+}
+
+.cal-weekdays,
+.cal-cells {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-weekday {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 6px 4px;
+  text-align: left;
+}
+
+.cal-cell {
+  min-height: 84px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.cal-chip-wrap {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.cal-chip-wrap > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.cal-cell--pad {
+  border-color: transparent;
+  background: transparent;
+}
+
+.cal-cell--today {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+.cal-daynum {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cal-cell--today .cal-daynum {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.cal-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cal-agenda {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cal-agenda-day {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 12px;
+}
+
+.cal-agenda-date {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: capitalize;
+  margin-bottom: 8px;
+}
+
+.cal-agenda .cal-chips {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 640px) {
   .desktop-only {
     display: none;
   }
   .mobile-cards {
+    display: flex;
+  }
+  .cal-agenda {
     display: flex;
   }
 }
