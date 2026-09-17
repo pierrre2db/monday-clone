@@ -1,12 +1,25 @@
 "use client";
 export type ViewKind = "table" | "kanban" | "calendar";
+
+const LABELS: Record<ViewKind, string> = {
+  table: "Table",
+  kanban: "Kanban",
+  calendar: "Calendar",
+};
+
 export default function ViewSwitcher({ value, onChange }: { value: ViewKind; onChange: (v: ViewKind) => void }) {
   const kinds: ViewKind[] = ["table", "kanban", "calendar"];
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+    <div className="seg" role="group" aria-label="View">
       {kinds.map((k) => (
-        <button key={k} onClick={() => onChange(k)}
-          style={{ fontWeight: value === k ? 700 : 400, textTransform: "capitalize" }}>{k}</button>
+        <button
+          key={k}
+          type="button"
+          aria-pressed={value === k}
+          onClick={() => onChange(k)}
+        >
+          {LABELS[k]}
+        </button>
       ))}
     </div>
   );

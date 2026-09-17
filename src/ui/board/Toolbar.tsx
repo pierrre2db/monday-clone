@@ -1,5 +1,6 @@
 "use client";
 import { COLUMN_TYPES } from "@/lib/columns/types";
+import Button from "@/ui/kit/Button";
 
 export default function Toolbar({
   onAddColumn,
@@ -9,9 +10,11 @@ export default function Toolbar({
   onAddGroup: () => void;
 }) {
   return (
-    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-      <button onClick={onAddGroup}>+ Group</button>
+    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <Button type="button" onClick={onAddGroup}>+ Group</Button>
       <select
+        className="view-select"
+        style={{ margin: 0 }}
         defaultValue=""
         onChange={(e) => {
           if (e.target.value) {

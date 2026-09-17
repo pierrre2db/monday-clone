@@ -7,13 +7,15 @@ import KanbanView from "./KanbanView";
 import CalendarView from "./CalendarView";
 import Toolbar from "./Toolbar";
 import MembersPanel from "./MembersPanel";
+import Button from "@/ui/kit/Button";
+import ThemeToggle from "@/ui/kit/ThemeToggle";
+import Popover from "@/ui/kit/Popover";
 import { api } from "./api";
 
 export default function BoardShell({ initialBoard, members: initialMembers }: { initialBoard: BoardFull; members: Member[] }) {
   const [board, setBoard] = useState<BoardFull>(initialBoard);
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [view, setView] = useState<ViewKind>("table");
-  const [membersOpen, setMembersOpen] = useState(false);
 
   function setCellLocal(itemId: string, columnId: string, value: Record<string, unknown>) {
     setBoard((b) => ({
@@ -121,27 +123,48 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     board, members, saveCell, addItem,
     deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
   };
+  const groupCount = board.groups.length;
+  const itemCount = board.items.length;
+  const initial = board.name.trim().charAt(0).toUpperCase() || "?";
+
   return (
-    <main style={{ padding: 20, fontFamily: "system-ui" }}>
-      <h1>{board.name}</h1>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <ViewSwitcher value={view} onChange={setView} />
-        <div style={{ position: "relative", marginBottom: 12 }}>
-          <button onClick={() => setMembersOpen((o) => !o)}>Members</button>
-          {membersOpen && (
-            <MembersPanel
-              members={members}
-              onAdd={addMember}
-              onDelete={deleteMember}
-              onClose={() => setMembersOpen(false)}
-            />
-          )}
+    <div className="wrap">
+      <div className="board-head">
+        <div className="board-emoji">{initial}</div>
+        <div>
+          <h1>{board.name}</h1>
+          <p>
+            {groupCount} {groupCount === 1 ? "group" : "groups"} · {itemCount} {itemCount === 1 ? "item" : "items"}
+          </p>
         </div>
       </div>
-      <Toolbar onAddColumn={addColumn} onAddGroup={addGroup} />
+
+      <div className="toolbar">
+        <ViewSwitcher value={view} onChange={setView} />
+        <div className="toolbar-actions">
+          <Toolbar onAddColumn={addColumn} onAddGroup={addGroup} />
+          <Popover
+            align="right"
+            trigger={({ toggle }) => (
+              <Button type="button" onClick={toggle}>Members</Button>
+            )}
+          >
+            {({ close }) => (
+              <MembersPanel
+                members={members}
+                onAdd={addMember}
+                onDelete={deleteMember}
+                onClose={close}
+              />
+            )}
+          </Popover>
+          <ThemeToggle />
+        </div>
+      </div>
+
       {view === "table" && <TableView {...shared} />}
       {view === "kanban" && <KanbanView {...shared} />}
       {view === "calendar" && <CalendarView board={board} />}
-    </main>
+    </div>
   );
 }
