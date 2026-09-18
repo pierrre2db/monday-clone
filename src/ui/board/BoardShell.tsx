@@ -6,6 +6,7 @@ import ViewSwitcher, { type ViewKind } from "./ViewSwitcher";
 import TableView from "./TableView";
 import KanbanView from "./KanbanView";
 import CalendarView from "./CalendarView";
+import ItemDetailPanel from "./ItemDetailPanel";
 import Toolbar from "./Toolbar";
 import FilterBar from "./FilterBar";
 import MembersPanel from "./MembersPanel";
@@ -22,6 +23,7 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
   const [view, setView] = useState<ViewKind>("table");
   const [admin, setAdmin] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [openItemId, setOpenItemId] = useState<string | null>(null);
   // Tracks which board's filters are currently loaded into state, so the persist
   // effect below never fires with a stale (pre-load) `filters` closure — without
   // this guard, the load effect's setFilters() and the persist effect can race on
@@ -208,9 +210,14 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     catch (e) { setMembers(prev); alert((e as Error).message); }
   }
 
+  function onOpenItem(id: string) {
+    setOpenItemId(id);
+  }
+
   const shared = {
     board: filteredBoard, members, saveCell, addItem,
     deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
+    onOpenItem,
   };
   const groupCount = board.groups.length;
   const itemCount = board.items.length;
@@ -265,7 +272,19 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
 
       {view === "table" && <TableView {...shared} />}
       {view === "kanban" && <KanbanView {...shared} />}
-      {view === "calendar" && <CalendarView board={filteredBoard} />}
+      {view === "calendar" && <CalendarView board={filteredBoard} onOpenItem={onOpenItem} />}
+
+      {openItemId && board.items.some((i) => i.id === openItemId) && (
+        <ItemDetailPanel
+          item={board.items.find((i) => i.id === openItemId)!}
+          board={board}
+          members={members}
+          onClose={() => setOpenItemId(null)}
+          saveCell={saveCell}
+          renameItem={renameItem}
+          deleteItem={(id) => { deleteItem(id); setOpenItemId(null); }}
+        />
+      )}
     </div>
   );
 }

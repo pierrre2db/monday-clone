@@ -6,7 +6,7 @@ import { StatusChip } from "@/ui/kit/Chip";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-export default function CalendarView({ board }: { board: BoardFull }) {
+export default function CalendarView({ board, onOpenItem }: { board: BoardFull; onOpenItem: (id: string) => void }) {
   const dateCols = board.columns.filter((c) => c.type === "date" || c.type === "timeline");
   const [colId, setColId] = useState(dateCols[0]?.id ?? "");
   const [month, setMonth] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
@@ -80,7 +80,13 @@ export default function CalendarView({ board }: { board: BoardFull }) {
                   <div className="cal-daynum">{day}</div>
                   <div className="cal-chips">
                     {(byDay.get(iso(day)) ?? []).map((it) => (
-                      <div key={it.id} className="cal-chip-wrap">
+                      <div
+                        key={it.id}
+                        className="cal-chip-wrap"
+                        style={{ cursor: "pointer" }}
+                        title="Ouvrir la fiche"
+                        onClick={() => onOpenItem(it.id)}
+                      >
                         <StatusChip label={it.name} color={colorForItem(it)} />
                       </div>
                     ))}
@@ -102,7 +108,14 @@ export default function CalendarView({ board }: { board: BoardFull }) {
             </div>
             <div className="cal-chips">
               {items.map((it) => (
-                <StatusChip key={it.id} label={it.name} color={colorForItem(it)} />
+                <div
+                  key={it.id}
+                  style={{ cursor: "pointer" }}
+                  title="Ouvrir la fiche"
+                  onClick={() => onOpenItem(it.id)}
+                >
+                  <StatusChip label={it.name} color={colorForItem(it)} />
+                </div>
               ))}
             </div>
           </div>

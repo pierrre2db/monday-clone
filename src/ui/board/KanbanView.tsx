@@ -9,9 +9,10 @@ type Props = {
   board: BoardFull; members: Member[];
   saveCell: (itemId: string, columnId: string, value: Record<string, unknown>) => void;
   addItem: (groupId: string) => void;
+  onOpenItem: (id: string) => void;
 };
 
-export default function KanbanView({ board, members, saveCell }: Props) {
+export default function KanbanView({ board, members, saveCell, onOpenItem }: Props) {
   const statusCols = board.columns.filter((c) => c.type === "status");
   const [statusColId, setStatusColId] = useState(statusCols[0]?.id ?? "");
   const col = board.columns.find((c) => c.id === statusColId);
@@ -50,7 +51,7 @@ export default function KanbanView({ board, members, saveCell }: Props) {
                 : [];
               return { id: i.id, name: i.name, assignees };
             });
-            return <Lane key={lane.id || "none"} lane={lane} cards={cards} />;
+            return <Lane key={lane.id || "none"} lane={lane} cards={cards} onOpenItem={onOpenItem} />;
           })}
         </div>
       </DndContext>
@@ -59,10 +60,11 @@ export default function KanbanView({ board, members, saveCell }: Props) {
 }
 
 function Lane({
-  lane, cards,
+  lane, cards, onOpenItem,
 }: {
   lane: { id: string; label: string; color: string };
   cards: { id: string; name: string; assignees: Member[] }[];
+  onOpenItem: (id: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: lane.id });
   return (
@@ -72,19 +74,29 @@ function Lane({
         {lane.label}
         <span className="count">{cards.length}</span>
       </div>
-      {cards.map((c) => <Card key={c.id} id={c.id} name={c.name} assignees={c.assignees} />)}
+      {cards.map((c) => <Card key={c.id} id={c.id} name={c.name} assignees={c.assignees} onOpenItem={onOpenItem} />)}
     </div>
   );
 }
 
-function Card({ id, name, assignees }: { id: string; name: string; assignees: Member[] }) {
+function Card({ id, name, assignees, onOpenItem }: { id: string; name: string; assignees: Member[]; onOpenItem: (id: string) => void }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
   const style: React.CSSProperties = {
     cursor: "grab",
+    position: "relative",
     ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)`, boxShadow: "var(--shadow-lg)" } : undefined),
   };
   return (
     <div ref={setNodeRef} {...listeners} {...attributes} className="kcard" style={style}>
+      <button
+        type="button"
+        title="Ouvrir la fiche"
+        className="x-btn kcard-open-btn"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onOpenItem(id); }}
+      >
+        ⤢
+      </button>
       <div className="t">{name}</div>
       {assignees.length > 0 && (
         <div className="meta" style={{ justifyContent: "flex-end" }}>

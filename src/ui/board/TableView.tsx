@@ -15,10 +15,12 @@ type Props = {
   updateColumnSettings: (id: string, settings: Record<string, unknown>) => void;
   deleteGroup: (id: string) => void;
   renameGroup: (id: string, name: string) => void;
+  onOpenItem: (id: string) => void;
 };
 export default function TableView({
   board, members, saveCell, addItem,
   deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
+  onOpenItem,
 }: Props) {
   const [settingsColId, setSettingsColId] = useState<string | null>(null);
 
@@ -120,6 +122,13 @@ export default function TableView({
                             className="inline-input inline-input--item"
                           />
                           <button
+                            onClick={() => onOpenItem(item.id)}
+                            title="Ouvrir la fiche"
+                            className="x-btn"
+                          >
+                            ⤢
+                          </button>
+                          <button
                             onClick={() => deleteItem(item.id)}
                             title="Delete item"
                             className="x-btn"
@@ -156,6 +165,13 @@ export default function TableView({
                       className="inline-input inline-input--item"
                       inputStyle={{ fontSize: 15, fontWeight: 700 }}
                     />
+                    <button
+                      onClick={() => onOpenItem(item.id)}
+                      title="Ouvrir la fiche"
+                      className="x-btn"
+                    >
+                      ⤢
+                    </button>
                     <button
                       onClick={() => deleteItem(item.id)}
                       title="Delete item"

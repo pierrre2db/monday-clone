@@ -647,6 +647,7 @@ textarea {
 .kcard .t {
   font-weight: 600;
   font-size: 13.5px;
+  padding-right: 20px;
 }
 
 .kcard .meta {
@@ -654,6 +655,13 @@ textarea {
   align-items: center;
   justify-content: space-between;
   margin-top: 9px;
+}
+
+.kcard-open-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  cursor: pointer;
 }
 
 /* ---- calendar view ---- */
@@ -860,6 +868,124 @@ textarea {
   padding: 28px 24px;
   display: grid;
   gap: 14px;
+}
+
+/* ---- item detail panel (ticket drawer) ---- */
+.item-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: rgba(20, 23, 38, 0.45);
+}
+
+.item-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(440px, 100%);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .item-panel {
+    width: 100%;
+    border-left: none;
+  }
+}
+
+.item-panel-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.item-panel-name-input {
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  width: 100%;
+  min-width: 0;
+}
+
+.item-panel-name-input:hover,
+.item-panel-name-input:focus {
+  border-color: var(--border);
+  background: var(--surface-2);
+  outline: none;
+}
+
+.item-panel-group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 4px 0 0 6px;
+}
+
+.item-panel-group-badge .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.item-panel-close {
+  font-size: 20px;
+  flex: none;
+  margin-top: 2px;
+}
+
+.item-panel-body {
+  padding: 16px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+}
+
+.item-panel-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-panel-field-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+}
+
+.item-panel-field-control {
+  min-width: 0;
+}
+
+.item-panel-footer {
+  padding: 14px 18px 20px;
+  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
 }
 
 .login-card h1 {
