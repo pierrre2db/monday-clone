@@ -6,6 +6,22 @@ typed columns and **Table / Kanban / Calendar** views. Runs on a VPS or locally 
 > One shared password gates the whole instance (no per-user accounts yet). Ideal for a
 > trusted team behind HTTPS. See the [roadmap](#roadmap).
 
+## Screenshots
+
+| Table view | Kanban board |
+| --- | --- |
+| ![Table view](docs/screenshots/table.png) | ![Kanban board](docs/screenshots/kanban.png) |
+| **Calendar** | **Focus personne (cross-board My Work)** |
+| ![Calendar view](docs/screenshots/calendar.png) | ![Person activity view](docs/screenshots/people.png) |
+
+Dark mode and mobile (the table becomes stacked cards):
+
+| Dark theme | Mobile |
+| --- | --- |
+| ![Dark theme](docs/screenshots/table-dark.png) | ![Mobile stacked cards](docs/screenshots/mobile.png) |
+
+<sub>Regenerate with the app running: `npm i -D playwright && npx playwright install chromium && node scripts/screenshots.mjs`.</sub>
+
 ## Features
 
 - **Boards** → groups → items → **typed columns**: text, status, person, date, number,
