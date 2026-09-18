@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import type { BoardFull, Column, Filters, Group, Member } from "./types";
 import ViewSwitcher, { type ViewKind } from "./ViewSwitcher";
 import TableView from "./TableView";
@@ -248,6 +249,9 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
               />
             )}
           </Popover>
+          <Link href="/people" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
+            Focus personne
+          </Link>
           <ThemeToggle />
         </div>
       </div>
