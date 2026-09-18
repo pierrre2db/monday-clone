@@ -58,6 +58,11 @@ an HTTPS reverse proxy in front (see the manual).
 
 - **[User & admin manual (MANUAL.md)](MANUAL.md)** — full guide: usage, configuration,
   backups, updates, VPS deployment, troubleshooting, architecture.
+- **[Specification (docs/SPECIFICATION.md)](docs/SPECIFICATION.md)** — current-state spec:
+  scope, architecture, data model, auth/roles, API surface. The source of truth.
+- **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — version history (v1.0 → v1.3).
+- **[docs/](docs/README.md)** — how the documentation base is organized (living docs vs
+  historical iteration records).
 
 ## Local development
 
