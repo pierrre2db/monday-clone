@@ -5,7 +5,7 @@
 > `docs/superpowers/plans/` are immutable historical records of each iteration; this
 > document supersedes them. Version history: [`CHANGELOG.md`](../CHANGELOG.md).
 
-**Current version:** v1.3 · **Last updated:** 2026-09-18
+**Current version:** v1.3.1 · **Last updated:** 2026-09-18
 
 ---
 
@@ -133,8 +133,6 @@ one cell-editor component test. Run `npm test` (16 tests as of v1.3). Type check
 - Single shared password (no individual accounts); no login rate-limiting; password
   comparison is not constant-time — acceptable for a trusted team behind HTTPS.
 - Item position uses a count-based scheme (benign race under high concurrency).
-- The status/dropdown label editor (⚙) can be visually clipped inside the table's
-  horizontal-scroll container in edge cases (functional, cosmetic).
 
 ## 11. Maintaining this document
 

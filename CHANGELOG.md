@@ -4,6 +4,11 @@ All notable changes to this project. See [`docs/SPECIFICATION.md`](docs/SPECIFIC
 for the current-state specification and [`docs/superpowers/`](docs/superpowers/) for the
 per-iteration design docs and plans.
 
+## v1.3.1 — Fix (2026-09-18)
+- **Fix**: the status/dropdown label editor (⚙) is now a centered modal (closes on Escape
+  and backdrop click) instead of an absolutely-positioned panel that could be clipped by the
+  table's scroll container.
+
 ## v1.3 — Users, filters & admin tier (2026-09-18)
 - **Admin tier**: optional `ADMIN_PASSWORD` unlocks member management; empty ⇒ `APP_PASSWORD`
   is admin (backward compatible). `GET /api/auth/me` exposes `{authenticated, admin}`.
