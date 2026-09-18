@@ -15,15 +15,18 @@ Déployable en une commande via Docker, sur un VPS ou en local (macOS/Linux/Wind
    - Boards, Groupes, Items
    - Types de colonnes
    - Vues (Table, Kanban, Calendrier)
+   - Filtres (Personne / Statut / Groupe)
+   - Focus personne / My Work
    - Membres
    - Thème clair/sombre & mobile
-6. [Sauvegarde & persistance des données](#6-sauvegarde--persistance)
-7. [Mise à jour](#7-mise-à-jour)
-8. [Mise en production sur un VPS](#8-mise-en-production-sur-un-vps)
-9. [Développement local](#9-développement-local)
-10. [Dépannage (FAQ)](#10-dépannage-faq)
-11. [Architecture technique](#11-architecture-technique)
-12. [Limites connues & feuille de route](#12-limites-connues--feuille-de-route)
+6. [Rôles & super-user (admin)](#6-rôles--super-user-admin)
+7. [Sauvegarde & persistance des données](#7-sauvegarde--persistance)
+8. [Mise à jour](#8-mise-à-jour)
+9. [Mise en production sur un VPS](#9-mise-en-production-sur-un-vps)
+10. [Développement local](#10-développement-local)
+11. [Dépannage (FAQ)](#11-dépannage-faq)
+12. [Architecture technique](#12-architecture-technique)
+13. [Limites connues & feuille de route](#13-limites-connues--feuille-de-route)
 
 ---
 
@@ -69,6 +72,7 @@ Variables dans `.env` (jamais commité ; `.env.example` sert de modèle) :
 |----------|------|-------------------|
 | `DATABASE_URL` | Chaîne de connexion PostgreSQL | `postgresql://monday:monday@db:5432/monday?schema=public` |
 | `APP_PASSWORD` | Mot de passe unique de l'instance | `change-me` — **à changer** |
+| `ADMIN_PASSWORD` | Mot de passe « super-user » pour la gestion des membres (voir [§6](#6-rôles--super-user-admin)) | `""` (vide) |
 | `SESSION_SECRET` | Clé de signature du cookie de session | à générer (chaîne aléatoire longue) |
 | `UPLOAD_DIR` | Dossier de stockage des fichiers | `/data/uploads` |
 | `MAX_UPLOAD_BYTES` | Taille max d'un upload (octets) | `10485760` (10 Mo) |
@@ -128,17 +132,62 @@ Basculez via les onglets **Table / Kanban / Calendrier** en haut du board.
 - **Kanban** : cartes regroupées par la colonne Statut choisie. **Glissez-déposez** une carte d'une colonne à l'autre pour changer son statut. Défilement horizontal des lanes.
 - **Calendrier** : items placés par une colonne Date/Timeline. Naviguez avec ‹ ›. Sur mobile, une vue **agenda** (liste) remplace la grille.
 
+### Filtres (Personne / Statut / Groupe)
+Une barre de filtres est affichée sous la barre d'outils du board, au-dessus des vues :
+- **Personne** : cochez un ou plusieurs membres pour n'afficher que les items qui leur sont assignés.
+- **Statut** : cochez un ou plusieurs labels d'une colonne Statut pour ne garder que les items correspondants.
+- **Groupe** : cochez un ou plusieurs groupes pour restreindre l'affichage à ces sections.
+
+Les filtres se combinent (ET logique entre catégories). Le nombre de filtres actifs et le
+nombre d'items masqués sont affichés ; bouton **Effacer** pour tout réinitialiser. Les filtres
+s'appliquent aux trois vues (Table, Kanban, Calendrier) et sont mémorisés par board dans le
+navigateur (pas partagés entre utilisateurs).
+
+### Focus personne / My Work
+Lien **Focus personne** (page `/people`, accessible depuis l'accueil ou la barre du board) :
+sélectionnez un membre pour voir **tous ses items, tous boards confondus** — nom du board,
+groupe, statut et échéance pour chacun. Un bouton **Exporter CSV** télécharge la liste
+affichée (une ligne par item : board, groupe, statut, échéance). Utile pour un point rapide
+sur la charge de travail d'une personne sans ouvrir chaque board.
+
 ### Membres
 Bouton **Members** dans la barre du board : ajoutez / supprimez des membres (nom + couleur).
-Ils apparaissent aussitôt dans les colonnes « Personne » (sans rechargement).
+Ils apparaissent aussitôt dans les colonnes « Personne » (sans rechargement). La création,
+l'édition et la suppression de membres nécessitent les droits **admin** (voir §6).
 
 ### Thème & mobile
 - **🌙 / ☀️** en haut : bascule clair/sombre (mémorisé dans le navigateur). Par défaut, suit le réglage du système.
-- **Responsive** : sous 640 px de large, la Table devient des **cartes empilées**, le Calendrier une **liste agenda**. Fonctionne sur téléphone comme sur ordinateur.
+- **Responsive** : sous 640 px de large, la Table devient des **cartes empilées**, le Calendrier une **liste agenda**, et la page Focus personne s'affiche en une seule colonne. Fonctionne sur téléphone comme sur ordinateur.
 
 ---
 
-## 6. Sauvegarde & persistance
+## 6. Rôles & super-user (admin)
+
+En v1.3, il n'y a toujours **pas de comptes individuels**, mais deux niveaux d'accès distincts,
+contrôlés par deux mots de passe :
+
+- **`APP_PASSWORD`** : donne accès à l'application (boards, items, filtres, Focus personne…).
+- **`ADMIN_PASSWORD`** : donne en plus les droits **admin** — créer, renommer et supprimer des
+  membres, et modifier/désassigner un membre depuis les colonnes Personne.
+
+Comportement selon la configuration :
+
+| `ADMIN_PASSWORD` | Effet |
+|---|---|
+| **Vide / non défini** (défaut) | `APP_PASSWORD` donne aussi les droits admin (compatibilité v1). Quiconque se connecte peut gérer les membres. |
+| **Défini** | `APP_PASSWORD` devient un accès **utilisateur simple** (lecture/édition des boards, pas de gestion des membres). Seule une connexion avec `ADMIN_PASSWORD` obtient les droits admin. |
+
+Dans l'UI, les boutons de gestion des membres (créer, éditer, supprimer, désassigner) ne
+s'affichent/s'activent que si la session est admin. L'API renvoie `403` sur ces actions sinon.
+Le statut courant est exposé par `GET /api/auth/me` → `{ authenticated, admin }`.
+
+Pour activer un vrai second niveau : définissez `ADMIN_PASSWORD` dans `.env` (différent de
+`APP_PASSWORD`), puis `docker compose up -d` pour recharger l'environnement. Partagez alors
+`APP_PASSWORD` à l'équipe et gardez `ADMIN_PASSWORD` pour vous / les responsables.
+
+---
+
+## 7. Sauvegarde & persistance
 
 Les données vivent dans deux volumes Docker nommés :
 - `pgdata` — base PostgreSQL (boards, items, cellules, membres)
@@ -164,7 +213,7 @@ docker run --rm -v mondayclone_uploads:/data -v "$PWD":/backup alpine \
 
 ---
 
-## 7. Mise à jour
+## 8. Mise à jour
 
 ```bash
 git pull
@@ -175,7 +224,7 @@ Les migrations de base sont appliquées automatiquement au démarrage du contene
 
 ---
 
-## 8. Mise en production sur un VPS
+## 9. Mise en production sur un VPS
 
 1. Installez Docker + Docker Compose sur le VPS.
 2. Clonez le dépôt, créez `.env` avec un **vrai** `APP_PASSWORD` et `SESSION_SECRET`.
@@ -195,7 +244,7 @@ Les migrations de base sont appliquées automatiquement au démarrage du contene
 
 ---
 
-## 9. Développement local
+## 10. Développement local
 
 ```bash
 docker compose up -d db        # juste PostgreSQL
@@ -209,9 +258,13 @@ Tests : `npm test` (Vitest). Vérif types : `npx tsc --noEmit`. Build : `npm run
 
 ---
 
-## 10. Dépannage (FAQ)
+## 11. Dépannage (FAQ)
 
 **« Le port 3000 est déjà utilisé »** → remappez le port hôte dans `docker-compose.yml` (voir §2).
+
+**Je suis connecté mais je ne peux pas gérer les membres** → `ADMIN_PASSWORD` est défini et
+votre session a été ouverte avec `APP_PASSWORD` (accès simple). Reconnectez-vous avec
+`ADMIN_PASSWORD`, ou videz `ADMIN_PASSWORD` pour revenir au mode admin unique (voir §6).
 
 **« Wrong password » à la connexion** → vérifiez `APP_PASSWORD` dans `.env`, puis `docker compose up -d` pour recharger l'environnement.
 
@@ -226,7 +279,7 @@ docker compose down -v && docker compose up -d --build && docker compose exec ap
 
 ---
 
-## 11. Architecture technique
+## 12. Architecture technique
 
 - **Front + back** : Next.js (App Router) — un seul service applicatif (React + Route Handlers/API).
 - **Base de données** : PostgreSQL via Prisma (ORM). Les valeurs de cellules sont stockées en JSON, validées par type de colonne.
@@ -239,20 +292,25 @@ Détails : voir `docs/superpowers/specs/` (spécifications) et `docs/superpowers
 
 ---
 
-## 12. Limites connues & feuille de route
+## 13. Limites connues & feuille de route
 
-**Limites v1 :**
-- Un seul mot de passe partagé (pas de comptes/rôles individuels).
+**Limites v1.3 :**
+- Deux mots de passe partagés au maximum (usage + admin), pas de comptes/rôles individuels par personne.
 - Pas de temps réel (rechargez pour voir les changements des autres).
 - Pas de rate-limiting sur la connexion.
 - Réordonnancement par glisser-déposer : Kanban uniquement (pas les lignes/colonnes en Table).
 - Le panneau d'édition des labels (⚙) peut être visuellement rogné dans certains cas.
 
+**Fait en v1.3 :**
+- ✅ Filtres de board par Personne / Statut / Groupe
+- ✅ Tier admin (`ADMIN_PASSWORD`) avec gestion des membres gated
+- ✅ Vue « Focus personne » cross-board avec export CSV
+
 **Feuille de route (v2) :**
-- Comptes utilisateurs + rôles & permissions
+- Comptes utilisateurs individuels + rôles & permissions (Étage 2B)
 - Automations (« quand statut = X → notifier / déplacer »)
 - Temps réel (websockets)
-- Réordonnancement lignes/colonnes, avatars images, recherche/filtres, sous-items
+- Réordonnancement lignes/colonnes, avatars images, recherche plein texte, sous-items
 
 ---
 

@@ -12,12 +12,16 @@ typed columns and **Table / Kanban / Calendar** views. Runs on a VPS or locally 
   dropdown/priority, checkbox, timeline, files, link, tags
 - **Three views** over the same data: editable **Table** (sticky first column), drag-and-drop
   **Kanban** (drag a card to change its status), and **Calendar** (by date/timeline column)
+- **Board filters** by Person / Status / Group, combinable, applied across all three views
+- **Focus personne (cross-board My Work view + CSV export)** — pick a member at `/people` to
+  see all their items across every board, with a one-click CSV export
 - **Colored status chips**, **avatar assignees**, editable status/dropdown labels
 - **File uploads** stored on a local volume
-- **Members** management for the person column
+- **Members** management for the person column, gated behind the **admin tier**
+- **Two-tier auth**: `APP_PASSWORD` for usage, optional separate `ADMIN_PASSWORD` for member
+  management (signed session cookie carries the admin flag)
 - **Light / dark theme** (follows system, toggle persists) and a **responsive** UI —
   the table becomes stacked cards on mobile, no horizontal overflow
-- **Single-password auth** (signed session cookie)
 - Full CRUD from the UI: create/rename/delete boards, groups, columns, items
 
 ## Quick start (Docker)
@@ -41,6 +45,7 @@ Open **http://localhost:3000** and sign in with `APP_PASSWORD`.
 | --- | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://monday:monday@db:5432/monday?schema=public` |
 | `APP_PASSWORD` | Single shared instance password | `change-me` — **change it** |
+| `ADMIN_PASSWORD` | Separate super-user password unlocking member management; empty means `APP_PASSWORD` is also admin | `""` |
 | `SESSION_SECRET` | Cookie signing secret (long random) | generate one |
 | `UPLOAD_DIR` | File storage path | `/data/uploads` |
 | `MAX_UPLOAD_BYTES` | Max upload size (bytes) | `10485760` (10 MB) |
@@ -79,8 +84,9 @@ keeps them; `down -v` deletes them. Backup commands are in the manual.
 
 ## Roadmap
 
-Per-user accounts + roles, automations, real-time (websockets), row/column drag-reorder,
-image avatars, search/filters. Contributions welcome.
+Done: board filters, admin tier, cross-board person activity view. Pending: per-user accounts
++ roles, automations, real-time (websockets), row/column drag-reorder, image avatars, full-text
+search. Contributions welcome.
 
 ## License
 
