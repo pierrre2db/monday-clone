@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BoardFull, Column, Group, Member } from "./types";
 import ViewSwitcher, { type ViewKind } from "./ViewSwitcher";
 import TableView from "./TableView";
@@ -16,6 +16,11 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
   const [board, setBoard] = useState<BoardFull>(initialBoard);
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [view, setView] = useState<ViewKind>("table");
+  const [admin, setAdmin] = useState(false);
+
+  useEffect(() => {
+    api.getMe().then((me) => setAdmin(me.admin)).catch(() => setAdmin(false));
+  }, []);
 
   function setCellLocal(itemId: string, columnId: string, value: Record<string, unknown>) {
     setBoard((b) => ({
@@ -118,6 +123,12 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     try { await api.deleteMember(id); }
     catch (e) { setMembers(prev); alert((e as Error).message); }
   }
+  async function editMember(id: string, data: { name?: string; avatarColor?: string }) {
+    const prev = members;
+    setMembers((ms) => ms.map((m) => (m.id !== id ? m : { ...m, ...data })));
+    try { await api.updateMember(id, data); }
+    catch (e) { setMembers(prev); alert((e as Error).message); }
+  }
 
   const shared = {
     board, members, saveCell, addItem,
@@ -152,8 +163,10 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
             {({ close }) => (
               <MembersPanel
                 members={members}
+                admin={admin}
                 onAdd={addMember}
                 onDelete={deleteMember}
+                onEdit={editMember}
                 onClose={close}
               />
             )}

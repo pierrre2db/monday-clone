@@ -34,4 +34,8 @@ export const api = {
     fetch("/api/members", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ name }) }).then(json),
   deleteMember: (id: string) => fetch(`/api/members/${id}`, { method: "DELETE" }).then(json),
+  updateMember: (id: string, data: { name?: string; avatarColor?: string }) =>
+    fetch(`/api/members/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
+      body: JSON.stringify(data) }).then(json),
+  getMe: () => fetch("/api/auth/me").then(json) as Promise<{ authenticated: boolean; admin: boolean }>,
 };
