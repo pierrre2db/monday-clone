@@ -9,3 +9,4 @@ export type BoardFull = {
   groups: Group[]; columns: Column[]; items: Item[];
 };
 export type Member = { id: string; name: string; avatarColor: string };
+export type Filters = { memberIds: string[]; labelIds: string[]; groupIds: string[] };
