@@ -5,7 +5,7 @@ import { cellRegistry } from "./cells/registry";
 import ColumnSettings from "./ColumnSettings";
 
 type Props = {
-  board: BoardFull; members: Member[];
+  board: BoardFull; members: Member[]; admin: boolean;
   saveCell: (itemId: string, columnId: string, value: Record<string, unknown>) => void;
   addItem: (groupId: string) => void;
   deleteItem: (id: string) => void;
@@ -18,7 +18,7 @@ type Props = {
   onOpenItem: (id: string) => void;
 };
 export default function TableView({
-  board, members, saveCell, addItem,
+  board, members, admin, saveCell, addItem,
   deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
   onOpenItem,
 }: Props) {
@@ -79,7 +79,7 @@ export default function TableView({
                             onCommit={(name) => renameColumn(c.id, name)}
                             className="inline-input inline-input--col"
                           />
-                          {(c.type === "status" || c.type === "dropdown") && (
+                          {admin && (c.type === "status" || c.type === "dropdown") && (
                             <button
                               onClick={() => setSettingsColId((id) => (id === c.id ? null : c.id))}
                               title="Column settings"

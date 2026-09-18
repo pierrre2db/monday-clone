@@ -215,7 +215,7 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
   }
 
   const shared = {
-    board: filteredBoard, members, saveCell, addItem,
+    board: filteredBoard, members, admin, saveCell, addItem,
     deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
     onOpenItem,
   };
