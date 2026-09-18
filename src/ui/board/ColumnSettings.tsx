@@ -1,11 +1,30 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Column } from "./types";
 import type { StatusLabel, DropdownOption } from "@/lib/columns/types";
 import Button from "@/ui/kit/Button";
 
 function uid(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** Full-screen centered modal so the panel is never clipped by a scroll container. */
+function Overlay({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div style={backdropStyle} onMouseDown={onClose}>
+      <div style={panelStyle} role="dialog" aria-modal="true" onMouseDown={(e) => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export default function ColumnSettings({
@@ -34,7 +53,7 @@ function StatusSettings({
   }
 
   return (
-    <div style={panelStyle}>
+    <Overlay onClose={onClose}>
       <div style={headingStyle}>Edit labels</div>
       {labels.map((l) => (
         <div key={l.id} style={rowStyle}>
@@ -58,7 +77,7 @@ function StatusSettings({
         <Button type="button" onClick={() => onSave({ labels })}>Save</Button>
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
@@ -80,7 +99,7 @@ function DropdownSettings({
   }
 
   return (
-    <div style={panelStyle}>
+    <Overlay onClose={onClose}>
       <div style={headingStyle}>Edit options</div>
       {options.map((o) => (
         <div key={o.id} style={rowStyle}>
@@ -98,15 +117,20 @@ function DropdownSettings({
         <Button type="button" onClick={() => onSave({ options })}>Save</Button>
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
       </div>
-    </div>
+    </Overlay>
   );
 }
 
-const panelStyle: React.CSSProperties = {
-  position: "absolute", top: "100%", left: 0, zIndex: 20,
-  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
-  padding: 12, boxShadow: "var(--shadow-lg)", minWidth: 210,
+const backdropStyle: React.CSSProperties = {
+  position: "fixed", inset: 0, zIndex: 200,
+  background: "rgba(20,23,38,.45)",
+  display: "grid", placeItems: "center", padding: 16,
   textTransform: "none", letterSpacing: "normal", fontWeight: 400,
+};
+const panelStyle: React.CSSProperties = {
+  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)",
+  padding: 16, boxShadow: "var(--shadow-lg)",
+  width: "min(340px, 100%)", maxHeight: "80vh", overflowY: "auto",
 };
 const headingStyle: React.CSSProperties = { fontWeight: 700, fontSize: 13.5, marginBottom: 8, color: "var(--text)" };
 const rowStyle: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 };
