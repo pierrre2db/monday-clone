@@ -4,6 +4,15 @@ All notable changes to this project. See [`docs/SPECIFICATION.md`](docs/SPECIFIC
 for the current-state specification and [`docs/superpowers/`](docs/superpowers/) for the
 per-iteration design docs and plans.
 
+## v1.4 — Editable ticket panel + status-definition lock (2026-09-18)
+- **Item detail panel (ticket)**: open an item from any view (⤢ in Table/Kanban, click a chip
+  in Calendar) → edit every field (name, status, assignee, dates, all types) in one side drawer,
+  or delete it. Full-screen on mobile.
+- **Status definitions locked to admin**: only the super-user can redefine status/dropdown
+  labels (the ⚙ editor / any column `settings` change; 403 for non-admins). Regular users still
+  set a cell's status, just can't redefine the labels. (Structural edits stay open for now.)
+- **Fix**: suppress the theme hydration warning; set the real page title/description.
+
 ## v1.3.1 — Fix (2026-09-18)
 - **Fix**: the status/dropdown label editor (⚙) is now a centered modal (closes on Escape
   and backdrop click) instead of an absolutely-positioned panel that could be clipped by the

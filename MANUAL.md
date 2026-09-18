@@ -15,6 +15,7 @@ Déployable en une commande via Docker, sur un VPS ou en local (macOS/Linux/Wind
    - Boards, Groupes, Items
    - Types de colonnes
    - Vues (Table, Kanban, Calendrier)
+   - Fiche ticket (édition complète)
    - Filtres (Personne / Statut / Groupe)
    - Focus personne / My Work
    - Membres
@@ -124,13 +125,21 @@ et l'API sont protégées sauf `/login` et l'endpoint d'authentification.
 | **Lien** | URL | url + libellé |
 | **Tags** | texte séparé par virgules | liste de tags |
 
-**Éditer les labels d'une colonne Statut / Dropdown** : bouton **⚙** sur l'en-tête de la colonne → ajoutez/renommez/recolorez les labels ou options → **Save**.
+**Éditer les labels d'une colonne Statut / Dropdown** : bouton **⚙** sur l'en-tête de la colonne → ajoutez/renommez/recolorez les labels ou options → **Save**. **Réservé à l'admin** (voir [§6](#6-rôles--super-user-admin)) : seul le super-user définit les statuts du projet ; les autres utilisateurs les utilisent mais ne les redéfinissent pas (le bouton ⚙ ne leur est pas affiché).
 
 ### Vues
 Basculez via les onglets **Table / Kanban / Calendrier** en haut du board.
 - **Table** : grille éditable. La 1re colonne (nom) reste visible au défilement horizontal.
 - **Kanban** : cartes regroupées par la colonne Statut choisie. **Glissez-déposez** une carte d'une colonne à l'autre pour changer son statut. Défilement horizontal des lanes.
 - **Calendrier** : items placés par une colonne Date/Timeline. Naviguez avec ‹ ›. Sur mobile, une vue **agenda** (liste) remplace la grille.
+
+### Fiche ticket (édition complète)
+Cliquez l'icône **⤢** sur une ligne (Table) ou une carte (Kanban), ou une pastille d'item
+(Calendrier) : un **panneau latéral** s'ouvre avec **tous les champs de l'item éditables au
+même endroit** — nom, statut, **responsable**, dates, et toutes les colonnes. Modifiez ce que
+vous voulez (les changements sont enregistrés au fil de l'eau), ou supprimez le ticket via le
+bouton **Supprimer**. Sur mobile, le panneau s'affiche en plein écran. `Échap` ou un clic sur
+le fond ferme le panneau.
 
 ### Filtres (Personne / Statut / Groupe)
 Une barre de filtres est affichée sous la barre d'outils du board, au-dessus des vues :

@@ -5,7 +5,7 @@
 > `docs/superpowers/plans/` are immutable historical records of each iteration; this
 > document supersedes them. Version history: [`CHANGELOG.md`](../CHANGELOG.md).
 
-**Current version:** v1.3.1 · **Last updated:** 2026-09-18
+**Current version:** v1.4 · **Last updated:** 2026-09-18
 
 ---
 
@@ -24,6 +24,9 @@ via a single `docker compose up`. Designed for a trusted team behind HTTPS.
 - **Three views** over the same data: **Table** (editable grid, sticky first column,
   stacked cards on mobile), **Kanban** (drag a card to change status, horizontal snap),
   **Calendar** (month grid; agenda list on mobile).
+- **Item detail panel (ticket)**: open an item from any view (⤢ in Table/Kanban, click a
+  chip in Calendar) to edit all its fields — name, status, assignee, dates, every column
+  type — in one side drawer, or delete it. Full-screen on mobile.
 - **Members**: assignable people for the `person` column (name + color). Admin-gated
   create/edit/delete; deleting a member cleanly unassigns them everywhere.
 - **Board filters**: by Person / Status / Group, combinable (AND), applied to all three
@@ -94,8 +97,11 @@ Settings: `status {labels:[{id,label,color}]}` · `dropdown {options:[{id,label}
 - **Admin tier:** if `ADMIN_PASSWORD` is set, logging in with it grants `admin:true`;
   `APP_PASSWORD` then grants `admin:false` (usage only). If `ADMIN_PASSWORD` is empty,
   `APP_PASSWORD` grants admin (single-password deployments keep full rights).
-- **Admin-only actions:** create/edit/delete members (enforced server-side; the UI hides
-  the controls for non-admins but the routes return 403 regardless).
+- **Admin-only actions:** create/edit/delete members, and **defining status/dropdown labels**
+  (the ⚙ editor / any column `settings` change) — the super-user defines the project's statuses;
+  regular users set a cell's status but cannot redefine the labels. Enforced server-side (403);
+  the UI hides the controls for non-admins. (Structural edits — add/rename/delete columns,
+  groups, boards — are not yet role-gated; deferred to the per-user accounts work.)
 - The `admin` flag lives in the signed cookie and cannot be forged without `SESSION_SECRET`.
 
 ## 7. API surface (all behind the auth proxy)
