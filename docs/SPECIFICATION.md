@@ -44,6 +44,8 @@ via a single `docker compose up`. Designed for a trusted team behind HTTPS.
 
 - Per-board permissions (roles are global, see §6); invite-by-email; self-service password
   reset/profile editing.
+- **Email notification on account creation/change** (send the user an email when their account
+  is created or modified) — requires SMTP config; planned next iteration.
 - Automations ("when status = Done → notify / move").
 - Real-time updates (websockets) — currently reload to see others' changes.
 - Row/column drag-reorder (drag exists only in Kanban), image avatars, full-text search,
