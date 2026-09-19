@@ -16,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ error: "admin required" }, { status: 403 });
   }
   const { id } = await params;
-  const { name, avatarColor } = await req.json();
-  const updated = await updateMember(id, { name, avatarColor });
+  const { name, avatarColor, role, active, password } = await req.json();
+  const updated = await updateMember(id, { name, avatarColor, role, active, password });
   return NextResponse.json(updated);
 }

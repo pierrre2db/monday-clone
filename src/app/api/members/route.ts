@@ -11,7 +11,15 @@ export async function POST(req: Request) {
   if (!(await isAdmin(req))) {
     return NextResponse.json({ error: "admin required" }, { status: 403 });
   }
-  const { name } = await req.json();
-  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-  return NextResponse.json(await createMember(name ?? "New member", color), { status: 201 });
+  const { name, email, password, role, avatarColor } = await req.json();
+  if (!email || !password) {
+    return NextResponse.json({ error: "email and password are required" }, { status: 400 });
+  }
+  const color = avatarColor ?? COLORS[Math.floor(Math.random() * COLORS.length)];
+  try {
+    const member = await createMember({ name: name ?? "New member", email, password, role, avatarColor: color });
+    return NextResponse.json(member, { status: 201 });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "failed to create member" }, { status: 400 });
+  }
 }

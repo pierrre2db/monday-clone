@@ -21,8 +21,8 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://monday:monday@db:5432/monday?schema=public
-      APP_PASSWORD: ${APP_PASSWORD:-change-me}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-admin}
       SESSION_SECRET: ${SESSION_SECRET:-dev-secret-change-me}
       UPLOAD_DIR: /data/uploads
       MAX_UPLOAD_BYTES: "10485760"

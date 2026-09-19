@@ -64,7 +64,12 @@ model CellValue {
 }
 
 model Member {
-  id          String @id @default(cuid())
-  name        String
-  avatarColor String @default("#00c875")
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("member") // "admin" | "member" | "viewer"
+  active       Boolean  @default(true)
+  avatarColor  String   @default("#00c875")
+  createdAt    DateTime @default(now())
 }
