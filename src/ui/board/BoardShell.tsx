@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import type { BoardFull, Column, Filters, Group, Member } from "./types";
+import type { BoardFull, Column, Filters, Group, Member, Role } from "./types";
 import ViewSwitcher, { type ViewKind } from "./ViewSwitcher";
 import TableView from "./TableView";
 import KanbanView from "./KanbanView";
@@ -13,15 +13,21 @@ import MembersPanel from "./MembersPanel";
 import Button from "@/ui/kit/Button";
 import ThemeToggle from "@/ui/kit/ThemeToggle";
 import Popover from "@/ui/kit/Popover";
-import { api } from "./api";
+import { Pill } from "@/ui/kit/Pill";
+import { api, type Me } from "./api";
 
 const EMPTY_FILTERS: Filters = { memberIds: [], labelIds: [], groupIds: [] };
+const ROLE_COLORS: Record<string, string> = {
+  admin: "#e2445c",
+  member: "#579bfc",
+  viewer: "#9aa1b1",
+};
 
 export default function BoardShell({ initialBoard, members: initialMembers }: { initialBoard: BoardFull; members: Member[] }) {
   const [board, setBoard] = useState<BoardFull>(initialBoard);
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [view, setView] = useState<ViewKind>("table");
-  const [admin, setAdmin] = useState(false);
+  const [me, setMe] = useState<Me | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [openItemId, setOpenItemId] = useState<string | null>(null);
   // Tracks which board's filters are currently loaded into state, so the persist
@@ -32,8 +38,15 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
   const [readyBoardId, setReadyBoardId] = useState<string | null>(null);
 
   useEffect(() => {
-    api.getMe().then((me) => setAdmin(me.admin)).catch(() => setAdmin(false));
+    api.getMe().then((res) => setMe(res.user)).catch(() => setMe(null));
   }, []);
+
+  // The server is the real gate (see src/lib/authz.ts) — these are purely UX:
+  // hide/disable controls the current role would get a 403 for. viewer = read
+  // only, member = content (items/cells) but not structure, admin = everything.
+  const role = me?.role ?? "viewer";
+  const canEdit = role !== "viewer";
+  const isAdmin = role === "admin";
 
   // Load persisted filters for this board on mount / board change.
   useEffect(() => {
@@ -193,9 +206,11 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     catch (e) { setBoard(prev); alert((e as Error).message); }
   }
 
-  async function addMember(name: string) {
-    const m = (await api.addMember(name)) as Member;
-    setMembers((ms) => [...ms, m]);
+  async function createUser(data: { name: string; email: string; password: string; role: Role; avatarColor: string }) {
+    try {
+      const m = (await api.createMember(data)) as Member;
+      setMembers((ms) => [...ms, m]);
+    } catch (e) { alert((e as Error).message); }
   }
   async function deleteMember(id: string) {
     const prev = members;
@@ -203,11 +218,15 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     try { await api.deleteMember(id); }
     catch (e) { setMembers(prev); alert((e as Error).message); }
   }
-  async function editMember(id: string, data: { name?: string; avatarColor?: string }) {
+  async function editMember(id: string, data: { name?: string; role?: Role; active?: boolean; avatarColor?: string; password?: string }) {
     const prev = members;
     setMembers((ms) => ms.map((m) => (m.id !== id ? m : { ...m, ...data })));
     try { await api.updateMember(id, data); }
     catch (e) { setMembers(prev); alert((e as Error).message); }
+  }
+
+  async function logout() {
+    try { await api.logout(); } finally { window.location.href = "/login"; }
   }
 
   function onOpenItem(id: string) {
@@ -215,7 +234,7 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
   }
 
   const shared = {
-    board: filteredBoard, members, admin, saveCell, addItem,
+    board: filteredBoard, members, canEdit, isAdmin, saveCell, addItem,
     deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
     onOpenItem,
   };
@@ -227,29 +246,39 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     <div className="wrap">
       <div className="board-head">
         <div className="board-emoji">{initial}</div>
-        <div>
+        {/* flex-basis (not 0%, the "flex: 1" default) so this item's natural width
+            counts toward the row's wrap decision — otherwise the user badge never
+            wraps to its own line and this title gets squeezed to near-nothing. */}
+        <div style={{ flex: "1 1 200px", minWidth: 0 }}>
           <h1>{board.name}</h1>
           <p>
             {groupCount} {groupCount === 1 ? "group" : "groups"} · {itemCount} {itemCount === 1 ? "item" : "items"}
           </p>
         </div>
+        {me && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", alignSelf: "flex-start" }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>{me.name}</span>
+            <Pill label={me.role} color={ROLE_COLORS[me.role] ?? "var(--text-muted)"} />
+            <Button type="button" variant="ghost" onClick={logout}>Déconnexion</Button>
+          </div>
+        )}
       </div>
 
       <div className="toolbar">
         <ViewSwitcher value={view} onChange={setView} />
         <div className="toolbar-actions">
-          <Toolbar onAddColumn={addColumn} onAddGroup={addGroup} />
+          {isAdmin && <Toolbar onAddColumn={addColumn} onAddGroup={addGroup} />}
           <Popover
             align="right"
             trigger={({ toggle }) => (
-              <Button type="button" onClick={toggle}>Members</Button>
+              <Button type="button" onClick={toggle}>Utilisateurs</Button>
             )}
           >
             {({ close }) => (
               <MembersPanel
                 members={members}
-                admin={admin}
-                onAdd={addMember}
+                isAdmin={isAdmin}
+                onCreate={createUser}
                 onDelete={deleteMember}
                 onEdit={editMember}
                 onClose={close}
@@ -279,6 +308,7 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
           item={board.items.find((i) => i.id === openItemId)!}
           board={board}
           members={members}
+          canEdit={canEdit}
           onClose={() => setOpenItemId(null)}
           saveCell={saveCell}
           renameItem={renameItem}

@@ -2,10 +2,11 @@
 import { useState } from "react";
 import type { BoardFull, Column, Item, Member } from "./types";
 import { cellRegistry } from "./cells/registry";
+import { ReadOnlyCell } from "./cells/ReadOnlyCell";
 import ColumnSettings from "./ColumnSettings";
 
 type Props = {
-  board: BoardFull; members: Member[]; admin: boolean;
+  board: BoardFull; members: Member[]; canEdit: boolean; isAdmin: boolean;
   saveCell: (itemId: string, columnId: string, value: Record<string, unknown>) => void;
   addItem: (groupId: string) => void;
   deleteItem: (id: string) => void;
@@ -18,16 +19,20 @@ type Props = {
   onOpenItem: (id: string) => void;
 };
 export default function TableView({
-  board, members, admin, saveCell, addItem,
+  board, members, canEdit, isAdmin, saveCell, addItem,
   deleteItem, renameItem, deleteColumn, renameColumn, updateColumnSettings, deleteGroup, renameGroup,
   onOpenItem,
 }: Props) {
   const [settingsColId, setSettingsColId] = useState<string | null>(null);
 
   // Shared between desktop <td> and mobile .mrow so both surfaces use the exact
-  // same cellRegistry editor instance/props.
+  // same cellRegistry editor instance/props. Viewers (canEdit === false) get a
+  // display-only ReadOnlyCell instead — never an editor, popover, or input.
   function renderCellEditor(item: Item, col: Column) {
     const cell = item.cells.find((c) => c.columnId === col.id);
+    if (!canEdit) {
+      return <ReadOnlyCell column={col} members={members} value={cell?.value ?? {}} />;
+    }
     const Editor = cellRegistry[col.type].Editor;
     return (
       <Editor
@@ -47,21 +52,29 @@ export default function TableView({
           <section key={group.id} className="group">
             <div className="group-title">
               <span className="dot" style={{ background: group.color }} />
-              <InlineEditable
-                key={group.name}
-                value={group.name}
-                onCommit={(name) => renameGroup(group.id, name)}
-                className="inline-input inline-input--group"
-                inputStyle={{ color: group.color }}
-              />
+              {isAdmin ? (
+                <InlineEditable
+                  key={group.name}
+                  value={group.name}
+                  onCommit={(name) => renameGroup(group.id, name)}
+                  className="inline-input inline-input--group"
+                  inputStyle={{ color: group.color }}
+                />
+              ) : (
+                <span className="inline-input inline-input--group" style={{ color: group.color }}>
+                  {group.name}
+                </span>
+              )}
               <span className="count">{items.length}</span>
-              <button
-                onClick={() => deleteGroup(group.id)}
-                title="Delete group"
-                className="x-btn"
-              >
-                ×
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => deleteGroup(group.id)}
+                  title="Delete group"
+                  className="x-btn"
+                >
+                  ×
+                </button>
+              )}
             </div>
 
             {/* Desktop: styled table card, sticky first column, horizontal scroll */}
@@ -73,13 +86,17 @@ export default function TableView({
                     {board.columns.map((c) => (
                       <th key={c.id} style={{ position: "relative" }}>
                         <div className="header-controls">
-                          <InlineEditable
-                            key={c.name}
-                            value={c.name}
-                            onCommit={(name) => renameColumn(c.id, name)}
-                            className="inline-input inline-input--col"
-                          />
-                          {admin && (c.type === "status" || c.type === "dropdown") && (
+                          {isAdmin ? (
+                            <InlineEditable
+                              key={c.name}
+                              value={c.name}
+                              onCommit={(name) => renameColumn(c.id, name)}
+                              className="inline-input inline-input--col"
+                            />
+                          ) : (
+                            <span className="inline-input inline-input--col">{c.name}</span>
+                          )}
+                          {isAdmin && (c.type === "status" || c.type === "dropdown") && (
                             <button
                               onClick={() => setSettingsColId((id) => (id === c.id ? null : c.id))}
                               title="Column settings"
@@ -88,15 +105,17 @@ export default function TableView({
                               ⚙
                             </button>
                           )}
-                          <button
-                            onClick={() => deleteColumn(c.id)}
-                            title="Delete column"
-                            className="x-btn"
-                          >
-                            ×
-                          </button>
+                          {isAdmin && (
+                            <button
+                              onClick={() => deleteColumn(c.id)}
+                              title="Delete column"
+                              className="x-btn"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
-                        {settingsColId === c.id && (
+                        {isAdmin && settingsColId === c.id && (
                           <ColumnSettings
                             column={c}
                             onSave={(settings) => {
@@ -115,12 +134,16 @@ export default function TableView({
                     <tr key={item.id}>
                       <td className="sticky-col">
                         <div className="item-name-cell">
-                          <InlineEditable
-                            key={item.name}
-                            value={item.name}
-                            onCommit={(name) => renameItem(item.id, name)}
-                            className="inline-input inline-input--item"
-                          />
+                          {canEdit ? (
+                            <InlineEditable
+                              key={item.name}
+                              value={item.name}
+                              onCommit={(name) => renameItem(item.id, name)}
+                              className="inline-input inline-input--item"
+                            />
+                          ) : (
+                            <span className="inline-input inline-input--item">{item.name}</span>
+                          )}
                           <button
                             onClick={() => onOpenItem(item.id)}
                             title="Ouvrir la fiche"
@@ -128,13 +151,15 @@ export default function TableView({
                           >
                             ⤢
                           </button>
-                          <button
-                            onClick={() => deleteItem(item.id)}
-                            title="Delete item"
-                            className="x-btn"
-                          >
-                            ×
-                          </button>
+                          {canEdit && (
+                            <button
+                              onClick={() => deleteItem(item.id)}
+                              title="Delete item"
+                              className="x-btn"
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </td>
                       {board.columns.map((col) => (
@@ -142,13 +167,15 @@ export default function TableView({
                       ))}
                     </tr>
                   ))}
-                  <tr className="add-row">
-                    <td className="sticky-col" colSpan={board.columns.length + 1}>
-                      <button className="add-btn" onClick={() => addItem(group.id)}>
-                        + Add item
-                      </button>
-                    </td>
-                  </tr>
+                  {canEdit && (
+                    <tr className="add-row">
+                      <td className="sticky-col" colSpan={board.columns.length + 1}>
+                        <button className="add-btn" onClick={() => addItem(group.id)}>
+                          + Add item
+                        </button>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -158,13 +185,19 @@ export default function TableView({
               {items.map((item) => (
                 <div key={item.id} className="mcard">
                   <div className="mcard-head">
-                    <InlineEditable
-                      key={item.name}
-                      value={item.name}
-                      onCommit={(name) => renameItem(item.id, name)}
-                      className="inline-input inline-input--item"
-                      inputStyle={{ fontSize: 15, fontWeight: 700 }}
-                    />
+                    {canEdit ? (
+                      <InlineEditable
+                        key={item.name}
+                        value={item.name}
+                        onCommit={(name) => renameItem(item.id, name)}
+                        className="inline-input inline-input--item"
+                        inputStyle={{ fontSize: 15, fontWeight: 700 }}
+                      />
+                    ) : (
+                      <span className="inline-input inline-input--item" style={{ fontSize: 15, fontWeight: 700 }}>
+                        {item.name}
+                      </span>
+                    )}
                     <button
                       onClick={() => onOpenItem(item.id)}
                       title="Ouvrir la fiche"
@@ -172,13 +205,15 @@ export default function TableView({
                     >
                       ⤢
                     </button>
-                    <button
-                      onClick={() => deleteItem(item.id)}
-                      title="Delete item"
-                      className="x-btn"
-                    >
-                      ×
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        title="Delete item"
+                        className="x-btn"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                   {board.columns.map((col) => (
                     <div key={col.id} className="mrow">
@@ -188,9 +223,11 @@ export default function TableView({
                   ))}
                 </div>
               ))}
-              <button className="add-btn mobile-add-btn" onClick={() => addItem(group.id)}>
-                + Add item
-              </button>
+              {canEdit && (
+                <button className="add-btn mobile-add-btn" onClick={() => addItem(group.id)}>
+                  + Add item
+                </button>
+              )}
             </div>
           </section>
         );

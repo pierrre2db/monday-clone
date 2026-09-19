@@ -6,13 +6,13 @@ import type { StatusLabel } from "@/lib/columns/types";
 import { AvatarStack } from "@/ui/kit/Avatar";
 
 type Props = {
-  board: BoardFull; members: Member[];
+  board: BoardFull; members: Member[]; canEdit: boolean;
   saveCell: (itemId: string, columnId: string, value: Record<string, unknown>) => void;
   addItem: (groupId: string) => void;
   onOpenItem: (id: string) => void;
 };
 
-export default function KanbanView({ board, members, saveCell, onOpenItem }: Props) {
+export default function KanbanView({ board, members, canEdit, saveCell, onOpenItem }: Props) {
   const statusCols = board.columns.filter((c) => c.type === "status");
   const [statusColId, setStatusColId] = useState(statusCols[0]?.id ?? "");
   const col = board.columns.find((c) => c.id === statusColId);
@@ -23,6 +23,7 @@ export default function KanbanView({ board, members, saveCell, onOpenItem }: Pro
   const personCol = board.columns.find((c) => c.type === "person");
 
   function onDragEnd(e: DragEndEvent) {
+    if (!canEdit) return;
     const itemId = String(e.active.id);
     const labelId = e.over ? String(e.over.id) : null;
     if (e.over) saveCell(itemId, col!.id, { labelId: labelId || null });
@@ -51,7 +52,7 @@ export default function KanbanView({ board, members, saveCell, onOpenItem }: Pro
                 : [];
               return { id: i.id, name: i.name, assignees };
             });
-            return <Lane key={lane.id || "none"} lane={lane} cards={cards} onOpenItem={onOpenItem} />;
+            return <Lane key={lane.id || "none"} lane={lane} cards={cards} canEdit={canEdit} onOpenItem={onOpenItem} />;
           })}
         </div>
       </DndContext>
@@ -60,13 +61,14 @@ export default function KanbanView({ board, members, saveCell, onOpenItem }: Pro
 }
 
 function Lane({
-  lane, cards, onOpenItem,
+  lane, cards, canEdit, onOpenItem,
 }: {
   lane: { id: string; label: string; color: string };
   cards: { id: string; name: string; assignees: Member[] }[];
+  canEdit: boolean;
   onOpenItem: (id: string) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: lane.id });
+  const { setNodeRef, isOver } = useDroppable({ id: lane.id, disabled: !canEdit });
   return (
     <div ref={setNodeRef} className="lane" style={isOver ? { borderColor: "var(--accent)" } : undefined}>
       <div className="lane-h">
@@ -74,20 +76,26 @@ function Lane({
         {lane.label}
         <span className="count">{cards.length}</span>
       </div>
-      {cards.map((c) => <Card key={c.id} id={c.id} name={c.name} assignees={c.assignees} onOpenItem={onOpenItem} />)}
+      {cards.map((c) => (
+        <Card key={c.id} id={c.id} name={c.name} assignees={c.assignees} canEdit={canEdit} onOpenItem={onOpenItem} />
+      ))}
     </div>
   );
 }
 
-function Card({ id, name, assignees, onOpenItem }: { id: string; name: string; assignees: Member[]; onOpenItem: (id: string) => void }) {
-  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id });
+function Card({
+  id, name, assignees, canEdit, onOpenItem,
+}: { id: string; name: string; assignees: Member[]; canEdit: boolean; onOpenItem: (id: string) => void }) {
+  // Viewers get no drag listeners attached at all — not just a disabled drag,
+  // so there's no drag affordance (cursor, drag start) in the read-only board.
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({ id, disabled: !canEdit });
   const style: React.CSSProperties = {
-    cursor: "grab",
+    cursor: canEdit ? "grab" : "default",
     position: "relative",
     ...(transform ? { transform: `translate(${transform.x}px, ${transform.y}px)`, boxShadow: "var(--shadow-lg)" } : undefined),
   };
   return (
-    <div ref={setNodeRef} {...listeners} {...attributes} className="kcard" style={style}>
+    <div ref={setNodeRef} {...(canEdit ? { ...listeners, ...attributes } : {})} className="kcard" style={style}>
       <button
         type="button"
         title="Ouvrir la fiche"

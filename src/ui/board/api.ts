@@ -2,6 +2,9 @@ async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? res.statusText);
   return res.json();
 }
+
+export type Me = { id: string; name: string; email: string; role: string };
+
 export const api = {
   setCell: (itemId: string, columnId: string, value: Record<string, unknown>) =>
     fetch("/api/cells", { method: "PUT", headers: { "content-type": "application/json" },
@@ -30,12 +33,15 @@ export const api = {
   updateGroup: (id: string, data: object) =>
     fetch(`/api/groups/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json),
-  addMember: (name: string) =>
+  listMembers: () => fetch("/api/members").then(json),
+  createMember: (data: { name: string; email: string; password: string; role?: string; avatarColor?: string }) =>
     fetch("/api/members", { method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name }) }).then(json),
+      body: JSON.stringify(data) }).then(json),
   deleteMember: (id: string) => fetch(`/api/members/${id}`, { method: "DELETE" }).then(json),
-  updateMember: (id: string, data: { name?: string; avatarColor?: string }) =>
+  updateMember: (id: string, data: { name?: string; role?: string; active?: boolean; avatarColor?: string; password?: string }) =>
     fetch(`/api/members/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json),
-  getMe: () => fetch("/api/auth/me").then(json) as Promise<{ authenticated: boolean; admin: boolean }>,
+  getMe: () =>
+    fetch("/api/auth/me").then(json) as Promise<{ authenticated: boolean; user: Me | null }>,
+  logout: () => fetch("/api/auth", { method: "DELETE" }).then(json),
 };

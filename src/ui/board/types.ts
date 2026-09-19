@@ -8,5 +8,6 @@ export type BoardFull = {
   id: string; name: string; description: string;
   groups: Group[]; columns: Column[]; items: Item[];
 };
-export type Member = { id: string; name: string; avatarColor: string };
+export type Role = "admin" | "member" | "viewer";
+export type Member = { id: string; name: string; email: string; role: Role; active: boolean; avatarColor: string };
 export type Filters = { memberIds: string[]; labelIds: string[]; groupIds: string[] };
