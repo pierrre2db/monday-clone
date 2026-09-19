@@ -218,9 +218,11 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
     try { await api.deleteMember(id); }
     catch (e) { setMembers(prev); alert((e as Error).message); }
   }
-  async function editMember(id: string, data: { name?: string; role?: Role; active?: boolean; avatarColor?: string; password?: string }) {
+  async function editMember(id: string, data: { name?: string; email?: string; role?: Role; active?: boolean; avatarColor?: string; password?: string }) {
     const prev = members;
-    setMembers((ms) => ms.map((m) => (m.id !== id ? m : { ...m, ...data })));
+    // Optimistic UI: never keep the password in client state; show the other fields.
+    const { password: _pw, ...visible } = data;
+    setMembers((ms) => ms.map((m) => (m.id !== id ? m : { ...m, ...visible })));
     try { await api.updateMember(id, data); }
     catch (e) { setMembers(prev); alert((e as Error).message); }
   }

@@ -67,15 +67,27 @@ export async function createMember(input: {
 
 export async function updateMember(
   id: string,
-  data: { name?: string; role?: string; active?: boolean; avatarColor?: string; password?: string }
+  data: { name?: string; email?: string; role?: string; active?: boolean; avatarColor?: string; password?: string }
 ): Promise<SafeMember> {
   if (data.role !== undefined) assertRole(data.role);
-  const { password, ...rest } = data;
+  const { password, email, ...rest } = data;
   const updateData: Prisma.MemberUpdateInput = { ...rest };
+  if (email !== undefined) {
+    const trimmed = email.trim();
+    if (!trimmed) throw new Error("L'email ne peut pas être vide.");
+    updateData.email = trimmed;
+  }
   if (password) {
     updateData.passwordHash = hashPassword(password);
   }
-  return prisma.member.update({ where: { id }, data: updateData, select: SAFE_SELECT });
+  try {
+    return await prisma.member.update({ where: { id }, data: updateData, select: SAFE_SELECT });
+  } catch (e) {
+    if (e && typeof e === "object" && (e as { code?: string }).code === "P2002") {
+      throw new Error("Cet email est déjà utilisé.");
+    }
+    throw e;
+  }
 }
 
 export const deleteMember = (id: string) => prisma.member.delete({ where: { id } });

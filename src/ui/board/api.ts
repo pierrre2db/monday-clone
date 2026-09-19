@@ -38,7 +38,7 @@ export const api = {
     fetch("/api/members", { method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json),
   deleteMember: (id: string) => fetch(`/api/members/${id}`, { method: "DELETE" }).then(json),
-  updateMember: (id: string, data: { name?: string; role?: string; active?: boolean; avatarColor?: string; password?: string }) =>
+  updateMember: (id: string, data: { name?: string; email?: string; role?: string; active?: boolean; avatarColor?: string; password?: string }) =>
     fetch(`/api/members/${id}`, { method: "PATCH", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json),
   getMe: () =>
