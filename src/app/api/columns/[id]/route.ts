@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
 import { updateColumn, deleteColumn } from "@/db/columns";
-import { isAdmin } from "@/lib/adminGuard";
+import { requireAdmin, isResponse } from "@/lib/authz";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const s = await requireAdmin(req); if (isResponse(s)) return s;
   const { id } = await params;
   const body = await req.json();
-  if ("settings" in body && !(await isAdmin(req))) {
-    return NextResponse.json({ error: "admin required" }, { status: 403 });
-  }
   return NextResponse.json(await updateColumn(id, body));
 }
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const s = await requireAdmin(req); if (isResponse(s)) return s;
   const { id } = await params;
   await deleteColumn(id);
   return NextResponse.json({ ok: true });

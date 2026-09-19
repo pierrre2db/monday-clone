@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile, readFile, stat } from "node:fs/promises";
 import { join, extname } from "node:path";
+import { requireAuth, requireMember, isResponse } from "@/lib/authz";
 
 const DIR = process.env.UPLOAD_DIR ?? "/data/uploads";
 const MAX = Number(process.env.MAX_UPLOAD_BYTES ?? 10_485_760);
 
 export async function POST(req: Request) {
+  const s = await requireMember(req); if (isResponse(s)) return s;
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "no file" }, { status: 400 });
@@ -18,6 +20,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+  const s = await requireAuth(req); if (isResponse(s)) return s;
   const id = new URL(req.url).searchParams.get("id");
   if (!id || id.includes("/") || id.includes("..")) return NextResponse.json({ error: "bad id" }, { status: 400 });
   const path = join(DIR, id);
