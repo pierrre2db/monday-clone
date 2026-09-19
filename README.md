@@ -91,6 +91,13 @@ an HTTPS reverse proxy in front (see the manual).
 - **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — version history (v1.0 → v2.0).
 - **[docs/](docs/README.md)** — how the documentation base is organized (living docs vs
   historical iteration records).
+- **[TODO.md](TODO.md)** — backlog / roadmap.
+
+## Testing
+
+Unit + integration: `npm test` (Vitest). End-to-end UI (role-based flows) against a running
+app: `npm i -D playwright && npx playwright install chromium`, then `npm run e2e` (see
+`e2e/smoke.mjs`; it self-provisions and cleans up its own test users).
 
 ## Local development
 

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "e2e": "node e2e/smoke.mjs"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
