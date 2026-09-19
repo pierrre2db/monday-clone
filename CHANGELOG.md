@@ -4,6 +4,28 @@ All notable changes to this project. See [`docs/SPECIFICATION.md`](docs/SPECIFIC
 for the current-state specification and [`docs/superpowers/`](docs/superpowers/) for the
 per-iteration design docs and plans.
 
+## v2.0 — Per-user accounts + roles (2026-09-19)
+- **Per-user accounts**: real email/password login replaces the single shared `APP_PASSWORD`
+  (now removed). Passwords hashed with `node:crypto` scrypt (salted, `timingSafeEqual`
+  comparison); never returned by any API.
+- **Three global roles** — **Admin**, **Member**, **Viewer** — with a server-enforced
+  permission matrix on every mutating route (401 unauthenticated, 403 wrong role): Viewer is
+  read-only, Member edits item content (cells, items, uploads), Admin additionally controls
+  structure (boards/groups/columns), status/dropdown label definitions, and user management.
+- **Users admin panel**: admins create/edit (role, password, active)/delete accounts from the
+  board's Users panel; non-admins see a read-only list. Deleting a user cleanly unassigns them
+  from every `person` cell, as before.
+- **Login/logout + role-aware UI**: email/password login page, logout button, a user/role
+  indicator in the header; cells and controls render read-only for Viewers and hide
+  admin-only actions for Members.
+- **Bootstrap admin**: the first admin account is created automatically on container start
+  from `ADMIN_EMAIL`/`ADMIN_PASSWORD` (`scripts/bootstrap-admin.mjs`, run before `npm run
+  start` in the Dockerfile) — a no-op once any account exists.
+- Session cookie now carries `{uid, role}` (was a single `admin` boolean); `GET /api/auth/me`
+  returns `{authenticated, user:{id,name,email,role}}`.
+- Removed dead `src/lib/adminGuard.ts` (superseded by `src/lib/authz.ts` in this release).
+- Plan: `docs/superpowers/plans/2026-09-19-phase-2b-accounts-roles.md`.
+
 ## v1.4 — Editable ticket panel + status-definition lock (2026-09-18)
 - **Item detail panel (ticket)**: open an item from any view (⤢ in Table/Kanban, click a chip
   in Calendar) → edit every field (name, status, assignee, dates, all types) in one side drawer,

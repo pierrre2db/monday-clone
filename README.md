@@ -3,7 +3,7 @@
 A self-hosted, Docker-deployable work-management app inspired by Monday.com — boards with
 typed columns and **Table / Kanban / Calendar** views. Runs on a VPS or locally with one command.
 
-> One shared password gates the whole instance (no per-user accounts yet). Ideal for a
+> Per-user accounts with roles (Admin / Member / Viewer) — no shared password. Ideal for a
 > trusted team behind HTTPS. See the [roadmap](#roadmap).
 
 ## Screenshots
@@ -33,9 +33,10 @@ Dark mode and mobile (the table becomes stacked cards):
   see all their items across every board, with a one-click CSV export
 - **Colored status chips**, **avatar assignees**, editable status/dropdown labels
 - **File uploads** stored on a local volume
-- **Members** management for the person column, gated behind the **admin tier**
-- **Two-tier auth**: `APP_PASSWORD` for usage, optional separate `ADMIN_PASSWORD` for member
-  management (signed session cookie carries the admin flag)
+- **Per-user accounts + roles**: real email/password login (scrypt-hashed, no shared instance
+  password), three global roles — **Admin** (full control + user management), **Member**
+  (edits item content), **Viewer** (read-only) — permissions enforced server-side on every
+  route, plus an admin-only Users panel and login/logout
 - **Light / dark theme** (follows system, toggle persists) and a **responsive** UI —
   the table becomes stacked cards on mobile, no horizontal overflow
 - Full CRUD from the UI: create/rename/delete boards, groups, columns, items
@@ -45,29 +46,40 @@ Dark mode and mobile (the table becomes stacked cards):
 ```bash
 git clone <this-repo-url> monday-clone
 cd monday-clone
-cp .env.example .env          # then edit .env — set APP_PASSWORD and SESSION_SECRET
+cp .env.example .env          # then edit .env — set ADMIN_PASSWORD and SESSION_SECRET
 docker compose up -d --build
 docker compose exec app npm run db:seed   # optional: demo board
 ```
 
-Open **http://localhost:3000** and sign in with `APP_PASSWORD`.
+Open **http://localhost:3000** and sign in with the bootstrapped admin (see below).
 
 > Port 3000 already taken? In `docker-compose.yml` (service `app`) change `"3000:3000"` to
 > `"4000:3000"`, then `docker compose up -d`. App is then on http://localhost:4000.
+
+### First run / admin
+
+On first container start (no accounts exist yet), `scripts/bootstrap-admin.mjs` creates one
+admin account from `ADMIN_EMAIL` / `ADMIN_PASSWORD`. Sign in with those credentials, then use
+the **Users** panel in the app to create accounts for the rest of the team and assign roles —
+there is no public signup. The bootstrap step is a no-op once any account exists, so it's safe
+to leave `ADMIN_EMAIL`/`ADMIN_PASSWORD` in `.env` permanently.
 
 ## Configuration
 
 | Var | Meaning | Default |
 | --- | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://monday:monday@db:5432/monday?schema=public` |
-| `APP_PASSWORD` | Single shared instance password | `change-me` — **change it** |
-| `ADMIN_PASSWORD` | Separate super-user password unlocking member management; empty means `APP_PASSWORD` is also admin | `""` |
+| `ADMIN_EMAIL` | Email for the bootstrapped first admin account (bootstrap/seed only) | `admin@example.com` |
+| `ADMIN_PASSWORD` | Password for the bootstrapped first admin account (bootstrap/seed only) | `change-me-admin` — **change it** |
 | `SESSION_SECRET` | Cookie signing secret (long random) | generate one |
 | `UPLOAD_DIR` | File storage path | `/data/uploads` |
 | `MAX_UPLOAD_BYTES` | Max upload size (bytes) | `10485760` (10 MB) |
 
+`APP_PASSWORD` (v1.x) has been removed — there is no shared instance password anymore, only
+individual accounts.
+
 Generate a secret: `openssl rand -base64 32`.
-**Before exposing publicly**, change `APP_PASSWORD` and set a real `SESSION_SECRET`, and put
+**Before exposing publicly**, change `ADMIN_PASSWORD` and set a real `SESSION_SECRET`, and put
 an HTTPS reverse proxy in front (see the manual).
 
 ## Documentation
@@ -76,7 +88,7 @@ an HTTPS reverse proxy in front (see the manual).
   backups, updates, VPS deployment, troubleshooting, architecture.
 - **[Specification (docs/SPECIFICATION.md)](docs/SPECIFICATION.md)** — current-state spec:
   scope, architecture, data model, auth/roles, API surface. The source of truth.
-- **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — version history (v1.0 → v1.3).
+- **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — version history (v1.0 → v2.0).
 - **[docs/](docs/README.md)** — how the documentation base is organized (living docs vs
   historical iteration records).
 
@@ -105,9 +117,10 @@ keeps them; `down -v` deletes them. Backup commands are in the manual.
 
 ## Roadmap
 
-Done: board filters, admin tier, cross-board person activity view. Pending: per-user accounts
-+ roles, automations, real-time (websockets), row/column drag-reorder, image avatars, full-text
-search. Contributions welcome.
+Done: board filters, cross-board person activity view, **per-user accounts + roles
+(Admin/Member/Viewer)**. Pending: per-board permissions, password-reset/invite flow,
+automations, real-time (websockets), row/column drag-reorder, image avatars, full-text search.
+Contributions welcome.
 
 ## License
 

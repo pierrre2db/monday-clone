@@ -5,7 +5,7 @@
 > `docs/superpowers/plans/` are immutable historical records of each iteration; this
 > document supersedes them. Version history: [`CHANGELOG.md`](../CHANGELOG.md).
 
-**Current version:** v1.4 · **Last updated:** 2026-09-18
+**Current version:** v2.0 · **Last updated:** 2026-09-19
 
 ---
 
@@ -27,23 +27,23 @@ via a single `docker compose up`. Designed for a trusted team behind HTTPS.
 - **Item detail panel (ticket)**: open an item from any view (⤢ in Table/Kanban, click a
   chip in Calendar) to edit all its fields — name, status, assignee, dates, every column
   type — in one side drawer, or delete it. Full-screen on mobile.
-- **Members**: assignable people for the `person` column (name + color). Admin-gated
-  create/edit/delete; deleting a member cleanly unassigns them everywhere.
+- **Members**: assignable people for the `person` column (name + color) — the same entity as
+  user accounts (see below); deleting one cleanly unassigns them everywhere.
 - **Board filters**: by Person / Status / Group, combinable (AND), applied to all three
   views, persisted per board in the browser.
 - **Focus personne / My Work** (`/people`): pick a member → all their items across ALL
   boards (board, group, status, due) + one-click CSV export.
-- **Auth**: single shared `APP_PASSWORD` gates the whole instance (signed session cookie).
-  Optional `ADMIN_PASSWORD` adds a super-user tier that unlocks member management; empty ⇒
-  `APP_PASSWORD` is also admin (backward compatible).
+- **Per-user accounts (email + password) with roles**: real login accounts (no shared
+  password) with three global roles — **Admin**, **Member**, **Viewer**. Login/logout,
+  server-enforced permissions per the matrix in §6, and an admin-only user management panel.
 - **File upload/download** on a local disk volume (size-limited, path-traversal guarded).
 - **Light/dark theme** (follows system, toggle persists on all pages) and a responsive,
   mobile-first UI (no horizontal overflow at 375px).
 
 ## 3. Out of scope / roadmap (not yet built)
 
-- Per-user login accounts, Viewer role, per-board permissions, deactivate-vs-delete two-step
-  (the "Étage 2B" full multi-user model).
+- Per-board permissions (roles are global, see §6); invite-by-email; self-service password
+  reset/profile editing.
 - Automations ("when status = Done → notify / move").
 - Real-time updates (websockets) — currently reload to see others' changes.
 - Row/column drag-reorder (drag exists only in Kanban), image avatars, full-text search,
@@ -55,10 +55,11 @@ Monolithic **Next.js** (App Router): React front + Route Handlers (API) in one s
 
 - **Database:** PostgreSQL via **Prisma 7** (driver adapter). `src/db/*` query modules are
   the ONLY code that touches Prisma; API routes and UI call these modules.
-- **Auth:** password(s) → signed JWT (HS256) in an httpOnly cookie (`monday_session`),
-  carrying an `admin` flag. `src/proxy.ts` (Next 16 renamed `middleware`→`proxy`) gates all
-  routes except `/login` and `/api/auth`. Member mutations are additionally gated
-  server-side by `src/lib/adminGuard.ts` (`isAdmin`).
+- **Auth:** email + scrypt-hashed password → signed JWT (HS256) in an httpOnly cookie
+  (`monday_session`), carrying `{uid, role}`. `src/proxy.ts` (Next 16 renamed
+  `middleware`→`proxy`) gates all routes except `/login` and `/api/auth`. Every mutating route
+  is additionally gated server-side by role via `src/lib/authz.ts` (`requireAuth`/
+  `requireMember`/`requireAdmin`), per the matrix in §6.
 - **Cell values:** stored as JSON in `CellValue.value`, validated/normalized per column
   type by pure functions in `src/lib/columns/` (the single source of truth for value shapes).
 - **Files:** local disk mounted as a Docker volume (`UPLOAD_DIR`), served via an
@@ -78,7 +79,7 @@ Monolithic **Next.js** (App Router): React front + Route Handlers (API) in one s
 | `Column` | id, boardId→Board, name, type, settings(JSON), position | `settings` holds status labels / dropdown options |
 | `Item` | id, boardId→Board, groupId→Group, name, position, createdAt | |
 | `CellValue` | id, itemId→Item, columnId→Column, value(JSON) | unique (itemId, columnId) |
-| `Member` | id, name, avatarColor | referenced by `person` cell values, not an FK |
+| `Member` | id, name, email(unique), passwordHash, role, active, avatarColor, createdAt | account + assignable person; referenced by `person` cell values, not an FK; `passwordHash` never returned by any API |
 
 Cascade deletes: Board → its Groups/Columns/Items/CellValues; Column → its CellValues;
 Item → its CellValues. Member deletion is handled in application code (unassign from all
@@ -93,51 +94,88 @@ Settings: `status {labels:[{id,label,color}]}` · `dropdown {options:[{id,label}
 
 ## 6. Auth & roles
 
-- **Access gate:** `APP_PASSWORD` (required to use anything).
-- **Admin tier:** if `ADMIN_PASSWORD` is set, logging in with it grants `admin:true`;
-  `APP_PASSWORD` then grants `admin:false` (usage only). If `ADMIN_PASSWORD` is empty,
-  `APP_PASSWORD` grants admin (single-password deployments keep full rights).
-- **Admin-only actions:** create/edit/delete members, and **defining status/dropdown labels**
-  (the ⚙ editor / any column `settings` change) — the super-user defines the project's statuses;
-  regular users set a cell's status but cannot redefine the labels. Enforced server-side (403);
-  the UI hides the controls for non-admins. (Structural edits — add/rename/delete columns,
-  groups, boards — are not yet role-gated; deferred to the per-user accounts work.)
-- The `admin` flag lives in the signed cookie and cannot be forged without `SESSION_SECRET`.
+- **Accounts:** real per-user login — email + password, no shared instance password. Password
+  hashing is `node:crypto` **scrypt** (random 16-byte salt, 64-byte derived key, stored as
+  `salt:hash` hex, compared with `timingSafeEqual`) — no extra dependency, never returns
+  `passwordHash` from any API, and login failures are a generic "invalid email or password"
+  (no user enumeration).
+- **Session:** on successful login, `signSession(secret, {uid, role})` sets the signed httpOnly
+  cookie; `src/proxy.ts` still just checks the cookie is valid (gates all routes except
+  `/login`/`/api/auth`), and each route additionally checks `role` via `src/lib/authz.ts`.
+- **Three global roles** (not per-board — see §3 roadmap):
+  - **Viewer** — read-only: can log in, view all boards/items/files/the user list, use
+    filters and Focus personne, but cannot change anything.
+  - **Member** — Viewer rights **plus** item content: edit cells (`PUT /api/cells`),
+    create/edit/delete items, upload files.
+  - **Admin** — Member rights **plus** structure (create/edit/delete boards, groups, columns),
+    status/dropdown label definitions (column `settings`), and user management (create/edit/
+    delete accounts, assign roles).
+
+  | Area | Viewer | Member | Admin |
+  | --- | --- | --- | --- |
+  | Read (boards, items, people, users, file download) | ✅ | ✅ | ✅ |
+  | Item content: cells, items CRUD, file upload | ❌ | ✅ | ✅ |
+  | Structure: boards/groups/columns CRUD | ❌ | ❌ | ✅ |
+  | Status/dropdown label definitions | ❌ | ❌ | ✅ |
+  | User management (create/edit/delete accounts) | ❌ | ❌ | ✅ |
+
+  Enforced server-side on every mutating route (401 unauthenticated, 403 wrong role); the UI
+  additionally hides/disables controls a role can't use (read-only cell rendering for
+  Viewer, admin-only buttons hidden for Member/Viewer) — but the server check is what actually
+  protects the data.
+- **No public signup.** Accounts are created by an admin from the Users panel. The **first**
+  admin is bootstrapped on container start from `ADMIN_EMAIL`/`ADMIN_PASSWORD`
+  (`scripts/bootstrap-admin.mjs`, run by the Dockerfile `CMD` before `npm run start`) — a no-op
+  once any account already exists, so it's safe to leave those env vars set permanently.
+- `APP_PASSWORD` (the v1.x single shared password) is **removed**; there is no instance-wide
+  password anymore, only individual accounts.
 
 ## 7. API surface (all behind the auth proxy)
 
-- `POST /api/auth` (login, sets role by password), `DELETE /api/auth` (logout),
-  `GET /api/auth/me` → `{authenticated, admin}`.
-- `GET/POST /api/boards`, `GET/PATCH/DELETE /api/boards/[id]`.
-- `POST /api/groups`, `PATCH/DELETE /api/groups/[id]`.
-- `POST /api/columns`, `PATCH/DELETE /api/columns/[id]` (PATCH also sets `settings`).
-- `POST /api/items`, `PATCH/DELETE /api/items/[id]`.
-- `PUT /api/cells` (validated set of a cell value).
-- `GET/POST /api/members`, `PATCH/DELETE /api/members/[id]` (mutations admin-only; DELETE unassigns).
-- `POST /api/upload` (multipart, size-limited), `GET /api/upload?id=` (download).
-- `GET /api/people/[id]/items` (cross-board items for a member).
+- `POST /api/auth` `{email,password}` → looks up the account, verifies the password, sets the
+  session cookie; `DELETE /api/auth` (logout); `GET /api/auth/me` →
+  `{authenticated, user:{id,name,email,role} | null}`.
+- `GET/POST /api/boards`, `GET/PATCH/DELETE /api/boards/[id]` (mutations admin-only).
+- `POST /api/groups`, `PATCH/DELETE /api/groups/[id]` (admin-only).
+- `POST /api/columns`, `PATCH/DELETE /api/columns/[id]` (admin-only; PATCH also sets `settings`).
+- `POST /api/items`, `PATCH/DELETE /api/items/[id]` (member+).
+- `PUT /api/cells` (member+; validated set of a cell value).
+- `GET/POST /api/members`, `PATCH/DELETE /api/members/[id]` — user accounts (the endpoint path
+  is unchanged from v1.x to avoid client churn, but it now manages login accounts, not just
+  assignable people). GET requires any authenticated session; POST/PATCH/DELETE are admin-only.
+  `POST`/`PATCH` accept `{name,email,password,role,active,avatarColor}` (role ∈
+  admin/member/viewer); DELETE unassigns the user from every `person` cell first.
+- `POST /api/upload` (member+, multipart, size-limited), `GET /api/upload?id=` (any
+  authenticated session, download).
+- `GET /api/people/[id]/items` (cross-board items for a member; any authenticated session).
 
 ## 8. Configuration
 
 | Var | Meaning | Default |
 | --- | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string | compose default |
-| `APP_PASSWORD` | Instance password | `change-me` (change it) |
-| `ADMIN_PASSWORD` | Super-user password for member management; empty ⇒ APP_PASSWORD is admin | `""` |
+| `ADMIN_EMAIL` | Email for the bootstrapped first admin account (bootstrap/seed only; no effect once any account exists) | `admin@example.com` |
+| `ADMIN_PASSWORD` | Password for the bootstrapped first admin account (bootstrap/seed only) | `change-me-admin` (change it) |
 | `SESSION_SECRET` | Cookie signing secret (long random) | generate |
 | `UPLOAD_DIR` | File storage path | `/data/uploads` |
 | `MAX_UPLOAD_BYTES` | Max upload size | `10485760` |
 
+`APP_PASSWORD` (v1.x) is removed — there is no instance-wide password.
+
 ## 9. Testing
 
-Vitest: column value validators, session (incl. admin role), DB integration (setCell),
-one cell-editor component test. Run `npm test` (16 tests as of v1.3). Type check
+Vitest: column value validators, session (uid+role round-trip), password hashing
+(scrypt hash≠plaintext, verify true/false, malformed input), DB integration (setCell),
+one cell-editor component test. Run `npm test` (20 tests as of v2.0). Type check
 `npx tsc --noEmit`; build `npm run build`.
 
 ## 10. Known limitations
 
-- Single shared password (no individual accounts); no login rate-limiting; password
-  comparison is not constant-time — acceptable for a trusted team behind HTTPS.
+- Roles are **global**, not per-board (any Member/Admin can act on every board); per-board
+  permissions are future work.
+- No password-reset flow and no invite-by-email — an admin sets a user's initial password
+  directly in the Users panel; the user can't self-serve a change yet.
+- No login rate-limiting.
 - Item position uses a count-based scheme (benign race under high concurrency).
 
 ## 11. Maintaining this document

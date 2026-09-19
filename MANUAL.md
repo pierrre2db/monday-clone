@@ -18,7 +18,7 @@ Déployable en une commande via Docker, sur un VPS ou en local (macOS/Linux/Wind
    - Fiche ticket (édition complète)
    - Filtres (Personne / Statut / Groupe)
    - Focus personne / My Work
-   - Membres
+   - Utilisateurs
    - Thème clair/sombre & mobile
 6. [Rôles & super-user (admin)](#6-rôles--super-user-admin)
 7. [Sauvegarde & persistance des données](#7-sauvegarde--persistance)
@@ -40,9 +40,11 @@ Déployable en une commande via Docker, sur un VPS ou en local (macOS/Linux/Wind
 | **Item** | Une ligne / tâche dans un groupe. |
 | **Colonne** | Un champ typé partagé par tous les items du board (ex : Statut, Personne, Date). |
 | **Cellule** | La valeur d'une colonne pour un item donné. |
-| **Membre** | Une personne assignable via une colonne « Personne » (pas un compte de connexion en v1). |
+| **Membre / Utilisateur** | Une personne assignable via une colonne « Personne » — c'est aussi son compte de connexion (email + mot de passe + rôle). |
 
-L'accès à toute l'instance est protégé par **un seul mot de passe partagé** (pas de comptes individuels en v1).
+Chaque personne a **son propre compte** (email + mot de passe) et un **rôle** — Admin, Membre
+ou Lecteur (Viewer) — qui détermine ce qu'elle peut faire (voir [§6](#6-rôles--super-user-admin)).
+Il n'y a plus de mot de passe unique partagé depuis la v2.0.
 
 ---
 
@@ -58,7 +60,10 @@ docker compose up -d --build
 docker compose exec app npm run db:seed   # optionnel : board de démo
 ```
 
-Ouvrez **http://localhost:3000** (ou le port choisi, voir ci-dessous) et connectez-vous avec `APP_PASSWORD`.
+Au premier démarrage du conteneur, un compte **admin** est automatiquement créé à partir de
+`ADMIN_EMAIL` / `ADMIN_PASSWORD` (voir [§3](#3-configuration) et [§6](#6-rôles--super-user-admin)).
+Ouvrez **http://localhost:3000** (ou le port choisi, voir ci-dessous) et connectez-vous avec cet
+email + mot de passe.
 
 > **Changer le port hôte** (si 3000 est déjà pris) : dans `docker-compose.yml`, service `app`, remplacez
 > `- "3000:3000"` par `- "4000:3000"` puis `docker compose up -d`. L'app est alors sur http://localhost:4000.
@@ -72,26 +77,34 @@ Variables dans `.env` (jamais commité ; `.env.example` sert de modèle) :
 | Variable | Rôle | Valeur par défaut |
 |----------|------|-------------------|
 | `DATABASE_URL` | Chaîne de connexion PostgreSQL | `postgresql://monday:monday@db:5432/monday?schema=public` |
-| `APP_PASSWORD` | Mot de passe unique de l'instance | `change-me` — **à changer** |
-| `ADMIN_PASSWORD` | Mot de passe « super-user » pour la gestion des membres (voir [§6](#6-rôles--super-user-admin)) | `""` (vide) |
+| `ADMIN_EMAIL` | Email du compte admin créé automatiquement au premier démarrage (bootstrap) ; sans effet si un compte existe déjà | `admin@example.com` |
+| `ADMIN_PASSWORD` | Mot de passe de ce compte admin bootstrap | `change-me-admin` — **à changer** |
 | `SESSION_SECRET` | Clé de signature du cookie de session | à générer (chaîne aléatoire longue) |
 | `UPLOAD_DIR` | Dossier de stockage des fichiers | `/data/uploads` |
 | `MAX_UPLOAD_BYTES` | Taille max d'un upload (octets) | `10485760` (10 Mo) |
+
+`APP_PASSWORD` (v1.x) a été **supprimé** : il n'y a plus de mot de passe unique d'instance,
+seulement des comptes individuels (voir [§6](#6-rôles--super-user-admin)).
 
 Générer un `SESSION_SECRET` :
 ```bash
 openssl rand -base64 32
 ```
 
-> ⚠️ **Avant toute exposition publique** : changez `APP_PASSWORD` et mettez un vrai `SESSION_SECRET`.
+> ⚠️ **Avant toute exposition publique** : changez `ADMIN_PASSWORD` (et changez le mot de
+> passe du compte admin dans l'app dès la première connexion) et mettez un vrai `SESSION_SECRET`.
 
 ---
 
 ## 4. Connexion
 
-À la première visite, vous êtes redirigé vers `/login`. Saisissez `APP_PASSWORD`.
-Un cookie de session signé (httpOnly, valable 30 jours) est posé ; toutes les pages
-et l'API sont protégées sauf `/login` et l'endpoint d'authentification.
+À la première visite, vous êtes redirigé vers `/login`. Saisissez votre **email** et votre
+**mot de passe** (compte créé par un admin, ou le compte admin bootstrap créé depuis
+`ADMIN_EMAIL`/`ADMIN_PASSWORD` au premier démarrage — voir [§6](#6-rôles--super-user-admin)).
+Un cookie de session signé (httpOnly, valable 30 jours) est posé ; toutes les pages et l'API
+sont protégées sauf `/login` et l'endpoint d'authentification. Il n'y a pas d'inscription
+publique : seul un admin crée de nouveaux comptes (panneau **Utilisateurs**, voir §6).
+Un bouton **Déconnexion** est visible en permanence dans la barre du haut (accueil et board).
 
 ---
 
@@ -159,10 +172,12 @@ groupe, statut et échéance pour chacun. Un bouton **Exporter CSV** télécharg
 affichée (une ligne par item : board, groupe, statut, échéance). Utile pour un point rapide
 sur la charge de travail d'une personne sans ouvrir chaque board.
 
-### Membres
-Bouton **Members** dans la barre du board : ajoutez / supprimez des membres (nom + couleur).
-Ils apparaissent aussitôt dans les colonnes « Personne » (sans rechargement). La création,
-l'édition et la suppression de membres nécessitent les droits **admin** (voir §6).
+### Utilisateurs
+Bouton **Utilisateurs** dans la barre du board : le panneau liste tous les comptes (nom,
+email, rôle). Ils apparaissent aussitôt dans les colonnes « Personne » comme membres
+assignables. Créer un compte, changer son rôle/mot de passe/statut actif, ou le supprimer
+nécessite les droits **admin** — voir [§6](#6-rôles--super-user-admin) pour le détail complet
+(les autres rôles voient une liste en lecture seule).
 
 ### Thème & mobile
 - **🌙 / ☀️** en haut : bascule clair/sombre (mémorisé dans le navigateur). Par défaut, suit le réglage du système.
@@ -172,27 +187,37 @@ l'édition et la suppression de membres nécessitent les droits **admin** (voir 
 
 ## 6. Rôles & super-user (admin)
 
-En v1.3, il n'y a toujours **pas de comptes individuels**, mais deux niveaux d'accès distincts,
-contrôlés par deux mots de passe :
+Depuis la v2.0, chaque personne a **son propre compte** (email + mot de passe) et un **rôle**
+global parmi trois :
 
-- **`APP_PASSWORD`** : donne accès à l'application (boards, items, filtres, Focus personne…).
-- **`ADMIN_PASSWORD`** : donne en plus les droits **admin** — créer, renommer et supprimer des
-  membres, et modifier/désassigner un membre depuis les colonnes Personne.
-
-Comportement selon la configuration :
-
-| `ADMIN_PASSWORD` | Effet |
+| Rôle | Peut faire |
 |---|---|
-| **Vide / non défini** (défaut) | `APP_PASSWORD` donne aussi les droits admin (compatibilité v1). Quiconque se connecte peut gérer les membres. |
-| **Défini** | `APP_PASSWORD` devient un accès **utilisateur simple** (lecture/édition des boards, pas de gestion des membres). Seule une connexion avec `ADMIN_PASSWORD` obtient les droits admin. |
+| **Lecteur (Viewer)** | Se connecter, consulter tous les boards/items/fichiers, la liste des utilisateurs, utiliser les filtres et Focus personne. **Lecture seule** : aucune modification possible (l'UI affiche les cellules en texte simple, pas d'éditeurs). |
+| **Membre (Member)** | Tout ce que peut le Lecteur, **plus** : éditer le contenu — cellules, créer/éditer/supprimer des items, uploader des fichiers. Ne peut pas modifier la structure (boards/groupes/colonnes), ni les définitions de statut (⚙), ni gérer les utilisateurs. |
+| **Admin** | Tout ce que peut le Membre, **plus** : créer/renommer/supprimer boards, groupes, colonnes ; définir les labels de statut/dropdown (⚙) ; créer, éditer (rôle, mot de passe, actif/inactif), et supprimer des comptes utilisateurs. |
 
-Dans l'UI, les boutons de gestion des membres (créer, éditer, supprimer, désassigner) ne
-s'affichent/s'activent que si la session est admin. L'API renvoie `403` sur ces actions sinon.
-Le statut courant est exposé par `GET /api/auth/me` → `{ authenticated, admin }`.
+Ces permissions sont **appliquées côté serveur** sur chaque route (401 si non connecté, 403 si
+le rôle ne convient pas) — l'UI ne fait qu'adapter l'affichage (masquer les boutons, cellules
+en lecture seule) pour éviter de proposer des actions qui échoueraient de toute façon.
 
-Pour activer un vrai second niveau : définissez `ADMIN_PASSWORD` dans `.env` (différent de
-`APP_PASSWORD`), puis `docker compose up -d` pour recharger l'environnement. Partagez alors
-`APP_PASSWORD` à l'équipe et gardez `ADMIN_PASSWORD` pour vous / les responsables.
+**Pas d'inscription publique.** Seul un admin crée des comptes, depuis le panneau
+**Utilisateurs** (bouton dans la barre du board) : nom, email, mot de passe, rôle, couleur
+d'avatar. Il peut ensuite éditer (changer le rôle, réinitialiser le mot de passe,
+activer/désactiver) ou supprimer un compte — la suppression désassigne proprement l'utilisateur
+de toutes les colonnes « Personne » où il apparaissait.
+
+**Premier admin (bootstrap)** : au tout premier démarrage du conteneur (aucun compte en base),
+un compte admin est créé automatiquement à partir de `ADMIN_EMAIL` et `ADMIN_PASSWORD` (voir
+[§3](#3-configuration)). Cette étape est un no-op dès qu'un compte existe déjà — vous pouvez
+laisser ces variables dans `.env` en permanence sans risque de recréer un admin. Connectez-vous
+avec ce compte, changez son mot de passe si besoin, puis créez les comptes de l'équipe depuis
+le panneau Utilisateurs.
+
+Le rôle courant est exposé par `GET /api/auth/me` →
+`{ authenticated, user: { id, name, email, role } }`.
+
+> Les rôles sont **globaux** (pas encore par board) : un Membre ou un Admin peut agir sur tous
+> les boards. Les permissions par board sont une évolution future (voir §13).
 
 ---
 
@@ -236,7 +261,7 @@ Les migrations de base sont appliquées automatiquement au démarrage du contene
 ## 9. Mise en production sur un VPS
 
 1. Installez Docker + Docker Compose sur le VPS.
-2. Clonez le dépôt, créez `.env` avec un **vrai** `APP_PASSWORD` et `SESSION_SECRET`.
+2. Clonez le dépôt, créez `.env` avec un **vrai** `ADMIN_PASSWORD` et `SESSION_SECRET`.
 3. `docker compose up -d --build`.
 4. **Placez un reverse proxy avec HTTPS devant** (l'app écoute en HTTP sur le port choisi).
    Exemple avec [Caddy](https://caddyserver.com/) (HTTPS automatique) — `Caddyfile` :
@@ -247,9 +272,9 @@ Les migrations de base sont appliquées automatiquement au démarrage du contene
    ```
 5. Ouvrez seulement le port 443 (HTTPS) au public ; ne pas exposer PostgreSQL (5432).
 
-> **Sécurité v1** : un seul mot de passe protège l'instance, sans limitation de tentatives.
-> Convient à une équipe de confiance derrière HTTPS. Pour un usage public/large,
-> voir la feuille de route (comptes utilisateurs).
+> **Sécurité v2.0** : comptes individuels avec mots de passe hashés (scrypt), mais sans
+> limitation de tentatives de connexion ni réinitialisation de mot de passe en libre-service.
+> Convient à une équipe de confiance derrière HTTPS.
 
 ---
 
@@ -271,11 +296,13 @@ Tests : `npm test` (Vitest). Vérif types : `npx tsc --noEmit`. Build : `npm run
 
 **« Le port 3000 est déjà utilisé »** → remappez le port hôte dans `docker-compose.yml` (voir §2).
 
-**Je suis connecté mais je ne peux pas gérer les membres** → `ADMIN_PASSWORD` est défini et
-votre session a été ouverte avec `APP_PASSWORD` (accès simple). Reconnectez-vous avec
-`ADMIN_PASSWORD`, ou videz `ADMIN_PASSWORD` pour revenir au mode admin unique (voir §6).
+**Je suis connecté mais je ne peux pas modifier quoi que ce soit / gérer les utilisateurs** →
+votre compte a le rôle **Lecteur** (ou **Membre** pour la gestion des utilisateurs/structure).
+Demandez à un admin de changer votre rôle depuis le panneau **Utilisateurs** (voir §6).
 
-**« Wrong password » à la connexion** → vérifiez `APP_PASSWORD` dans `.env`, puis `docker compose up -d` pour recharger l'environnement.
+**« Email ou mot de passe invalide » à la connexion** → vérifiez l'email et le mot de passe du
+compte (créé par un admin, ou le compte bootstrap `ADMIN_EMAIL`/`ADMIN_PASSWORD` au tout
+premier démarrage — cette variable n'a plus d'effet une fois qu'au moins un compte existe).
 
 **Un fichier uploadé renvoie « not found »** → le volume `uploads` a peut-être été recréé (`down -v`). Les références en base pointent vers des fichiers disparus.
 
@@ -292,7 +319,9 @@ docker compose down -v && docker compose up -d --build && docker compose exec ap
 
 - **Front + back** : Next.js (App Router) — un seul service applicatif (React + Route Handlers/API).
 - **Base de données** : PostgreSQL via Prisma (ORM). Les valeurs de cellules sont stockées en JSON, validées par type de colonne.
-- **Auth** : mot de passe unique → cookie de session JWT signé (HS256), vérifié par un middleware (`proxy.ts`).
+- **Auth** : comptes individuels (email + mot de passe hashé scrypt) → cookie de session JWT
+  signé (HS256, `{uid, role}`), vérifié par un middleware (`proxy.ts`) ; permissions par rôle
+  appliquées route par route (`src/lib/authz.ts`).
 - **Fichiers** : disque local monté en volume Docker, servis via une route authentifiée (garde anti-traversée de chemin).
 - **UI** : design tokens CSS (clair/sombre), composants maison (`src/ui/kit/`), responsive mobile-first.
 - **Déploiement** : image Docker multi-stage + `docker-compose.yml` (app + db + volumes).
@@ -303,20 +332,28 @@ Détails : voir `docs/superpowers/specs/` (spécifications) et `docs/superpowers
 
 ## 13. Limites connues & feuille de route
 
-**Limites v1.3 :**
-- Deux mots de passe partagés au maximum (usage + admin), pas de comptes/rôles individuels par personne.
-- Pas de temps réel (rechargez pour voir les changements des autres).
+**Limites v2.0 :**
+- Rôles **globaux** uniquement (pas de permissions par board pour l'instant).
+- Pas de réinitialisation de mot de passe ni d'invitation par email en libre-service (un admin
+  fixe le mot de passe initial dans le panneau Utilisateurs).
 - Pas de rate-limiting sur la connexion.
+- Pas de temps réel (rechargez pour voir les changements des autres).
 - Réordonnancement par glisser-déposer : Kanban uniquement (pas les lignes/colonnes en Table).
 - Le panneau d'édition des labels (⚙) peut être visuellement rogné dans certains cas.
 
+**Fait en v2.0 :**
+- ✅ Comptes individuels (email + mot de passe hashé scrypt), plus de mot de passe partagé
+- ✅ Trois rôles globaux — Admin / Membre / Lecteur — avec permissions appliquées côté serveur
+- ✅ Panneau **Utilisateurs** admin (créer/éditer/supprimer des comptes, assigner un rôle)
+- ✅ Connexion/déconnexion, premier admin bootstrappé depuis `ADMIN_EMAIL`/`ADMIN_PASSWORD`
+
 **Fait en v1.3 :**
 - ✅ Filtres de board par Personne / Statut / Groupe
-- ✅ Tier admin (`ADMIN_PASSWORD`) avec gestion des membres gated
 - ✅ Vue « Focus personne » cross-board avec export CSV
 
-**Feuille de route (v2) :**
-- Comptes utilisateurs individuels + rôles & permissions (Étage 2B)
+**Feuille de route :**
+- Permissions par board (au-delà des rôles globaux)
+- Réinitialisation de mot de passe / invitation par email en libre-service
 - Automations (« quand statut = X → notifier / déplacer »)
 - Temps réel (websockets)
 - Réordonnancement lignes/colonnes, avatars images, recherche plein texte, sous-items
