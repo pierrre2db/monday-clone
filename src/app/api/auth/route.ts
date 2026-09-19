@@ -1,26 +1,31 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE, signSession } from "@/lib/session";
+import { getMemberByEmail } from "@/db/members";
+import { verifyPassword } from "@/lib/password";
+
+const INVALID_CREDENTIALS = "Email ou mot de passe invalide";
 
 export async function POST(req: Request) {
-  const { password } = await req.json();
-  const adminPw = process.env.ADMIN_PASSWORD;
-  const hasAdminPw = typeof adminPw === "string" && adminPw.length > 0;
+  const { email, password } = await req.json();
 
-  let admin: boolean;
-  if (hasAdminPw && password === adminPw) {
-    admin = true;
-  } else if (password === process.env.APP_PASSWORD) {
-    // Backward compat: when ADMIN_PASSWORD is unset/empty, APP_PASSWORD grants admin.
-    admin = !hasAdminPw;
-  } else {
-    return NextResponse.json({ error: "wrong password" }, { status: 401 });
+  if (typeof email !== "string" || typeof password !== "string") {
+    return NextResponse.json({ error: INVALID_CREDENTIALS }, { status: 401 });
   }
 
-  const token = await signSession(process.env.SESSION_SECRET!, admin);
-  const res = NextResponse.json({ ok: true });
+  const member = await getMemberByEmail(email);
+  if (!member || !member.active || !verifyPassword(password, member.passwordHash)) {
+    return NextResponse.json({ error: INVALID_CREDENTIALS }, { status: 401 });
+  }
+
+  const token = await signSession(process.env.SESSION_SECRET!, { uid: member.id, role: member.role });
+  const res = NextResponse.json({
+    ok: true,
+    user: { id: member.id, name: member.name, email: member.email, role: member.role },
+  });
   res.cookies.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
   return res;
 }
+
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });

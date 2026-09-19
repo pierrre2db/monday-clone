@@ -1,7 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { SESSION_COOKIE, readSession } from "@/lib/session";
+import { getSession } from "@/lib/authz";
+import { getMemberById } from "@/db/members";
 
 export async function GET(req: NextRequest) {
-  const { ok, admin } = await readSession(req.cookies.get(SESSION_COOKIE)?.value, process.env.SESSION_SECRET!);
-  return NextResponse.json({ authenticated: ok, admin });
+  const session = await getSession(req);
+  if (!session) return NextResponse.json({ authenticated: false, user: null });
+
+  const user = await getMemberById(session.uid);
+  if (!user) return NextResponse.json({ authenticated: false, user: null });
+
+  return NextResponse.json({ authenticated: true, user });
 }

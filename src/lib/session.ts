@@ -3,8 +3,10 @@ import { SignJWT, jwtVerify } from "jose";
 const enc = (secret: string) => new TextEncoder().encode(secret);
 export const SESSION_COOKIE = "monday_session";
 
-export async function signSession(secret: string, admin = false): Promise<string> {
-  return new SignJWT({ ok: true, admin })
+export type SessionPayload = { uid: string; role: string };
+
+export async function signSession(secret: string, payload: SessionPayload): Promise<string> {
+  return new SignJWT({ uid: payload.uid, role: payload.role })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
@@ -14,13 +16,16 @@ export async function signSession(secret: string, admin = false): Promise<string
 export async function readSession(
   token: string | undefined,
   secret: string
-): Promise<{ ok: boolean; admin: boolean }> {
-  if (!token) return { ok: false, admin: false };
+): Promise<{ ok: boolean; uid: string | null; role: string | null }> {
+  if (!token) return { ok: false, uid: null, role: null };
   try {
     const { payload } = await jwtVerify(token, enc(secret));
-    return { ok: payload.ok === true, admin: payload.admin === true };
+    const uid = typeof payload.uid === "string" ? payload.uid : null;
+    const role = typeof payload.role === "string" ? payload.role : null;
+    if (!uid) return { ok: false, uid: null, role: null };
+    return { ok: true, uid, role };
   } catch {
-    return { ok: false, admin: false };
+    return { ok: false, uid: null, role: null };
   }
 }
 
