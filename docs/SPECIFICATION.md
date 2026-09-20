@@ -5,7 +5,7 @@
 > `docs/superpowers/plans/` are immutable historical records of each iteration; this
 > document supersedes them. Version history: [`CHANGELOG.md`](../CHANGELOG.md).
 
-**Current version:** v2.0 · **Last updated:** 2026-09-19
+**Current version:** v2.1 · **Last updated:** 2026-09-20
 
 ---
 
@@ -37,6 +37,9 @@ via a single `docker compose up`. Designed for a trusted team behind HTTPS.
   password) with three global roles — **Admin**, **Member**, **Viewer**. Login/logout,
   server-enforced permissions per the matrix in §6, and an admin-only user management panel.
 - **File upload/download** on a local disk volume (size-limited, path-traversal guarded).
+- **MCP server** (`mcp/`, standalone) exposing the app's operations as Model Context Protocol
+  tools so Claude can drive it in natural language; authenticates by logging in with a
+  configured account (role governs permissions), stdio transport. See `mcp/README.md`.
 - **Light/dark theme** (follows system, toggle persists on all pages) and a responsive,
   mobile-first UI (no horizontal overflow at 375px).
 

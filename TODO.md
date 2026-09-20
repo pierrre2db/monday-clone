@@ -13,6 +13,12 @@ Living backlog. Done items move to [`CHANGELOG.md`](CHANGELOG.md); the current s
       real drag gesture).
 - [ ] Wire `npm run e2e` into CI (start app + DB, seed, run e2e, tear down).
 
+## MCP (drive from Claude)
+- [x] **Standalone MCP server** (`mcp/`) — 18 tools over the REST API (boards/items/cells/users/
+      person-activity), login-by-creds (admin), stdio. Run per `mcp/README.md`.
+- [ ] Optional: HTTP/SSE transport (drive a remote VPS), per-user API tokens instead of creds,
+      an MCP eval suite.
+
 ## Next iteration (requested)
 - [ ] **Email notification on account create/change** — send the user an email when their
       account is created or modified. Requires SMTP config (env), templates, async send.

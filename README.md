@@ -99,6 +99,14 @@ Unit + integration: `npm test` (Vitest). End-to-end UI (role-based flows) agains
 app: `npm i -D playwright && npx playwright install chromium`, then `npm run e2e` (see
 `e2e/smoke.mjs`; it self-provisions and cleans up its own test users).
 
+## MCP server (drive it from Claude)
+
+A standalone [Model Context Protocol](https://modelcontextprotocol.io) server in
+[`mcp/`](mcp/) lets Claude (Desktop / Code) drive the app in natural language — list boards,
+add tasks, set status/assignee/dates, manage users, query who works on what. It talks to the
+REST API and authenticates by logging in with a configured account (its role governs
+permissions). See [`mcp/README.md`](mcp/README.md) for setup and the `mcp.json` snippet.
+
 ## Local development
 
 ```bash

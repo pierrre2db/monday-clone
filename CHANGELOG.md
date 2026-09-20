@@ -4,6 +4,13 @@ All notable changes to this project. See [`docs/SPECIFICATION.md`](docs/SPECIFIC
 for the current-state specification and [`docs/superpowers/`](docs/superpowers/) for the
 per-iteration design docs and plans.
 
+## v2.1 — MCP server (2026-09-20)
+- **Standalone MCP server** (`mcp/`, `monday-clone-mcp-server`) so Claude can drive the app via
+  tools mapped to the REST API: read boards/users/person-activity; add/edit/move/delete items;
+  set status (by label name), assignee (by person name), dates; create boards/groups/columns;
+  manage users. Auth = logs in with a configured account (role governs permissions); stdio
+  transport; destructive tools flagged. Not part of the app build (own package). See `mcp/README.md`.
+
 ## v2.0.1 — User edit form (2026-09-19)
 - Admin can now edit an existing user's **email** and **password** (plus name, role, active,
   color) via an edit form (click ✎ on a user; blank password = unchanged). Email changes are
