@@ -19,9 +19,19 @@ Living backlog. Done items move to [`CHANGELOG.md`](CHANGELOG.md); the current s
 - [ ] Optional: HTTP/SSE transport (drive a remote VPS), per-user API tokens instead of creds,
       an MCP eval suite.
 
+## Time tracking & settings
+- [x] **Time tracking** (3A) — log time per task (`TimeEntry`), ticket-panel UI, personal total.
+- [x] **App settings** (3B) — admin `/settings`: daily-hours check (+ in-app banner) and SMTP config
+      (write-only password).
+- [ ] **3C — email reminders**: daily « log your time / under target » email using the SMTP settings +
+      a scheduler (node-cron in the app, or a protected `/api/cron/...` endpoint hit by an external cron).
+- [ ] Time **reporting page** (per person / task / board / period) + CSV export.
+- [ ] Per-user daily-hours target (currently global).
+- [ ] MCP tool `monday_log_time` (log/report time from Claude).
+
 ## Next iteration (requested)
 - [ ] **Email notification on account create/change** — send the user an email when their
-      account is created or modified. Requires SMTP config (env), templates, async send.
+      account is created or modified. Uses the SMTP settings (3B); needs templates + async send.
 
 ## Roles & accounts (Phase 2C)
 - [ ] Per-board permissions (roles are currently global).

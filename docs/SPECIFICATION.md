@@ -5,7 +5,7 @@
 > `docs/superpowers/plans/` are immutable historical records of each iteration; this
 > document supersedes them. Version history: [`CHANGELOG.md`](../CHANGELOG.md).
 
-**Current version:** v2.1 · **Last updated:** 2026-09-20
+**Current version:** v2.2 · **Last updated:** 2026-09-24
 
 ---
 
@@ -37,6 +37,11 @@ via a single `docker compose up`. Designed for a trusted team behind HTTPS.
   password) with three global roles — **Admin**, **Member**, **Viewer**. Login/logout,
   server-enforced permissions per the matrix in §6, and an admin-only user management panel.
 - **File upload/download** on a local disk volume (size-limited, path-traversal guarded).
+- **Time tracking**: log time worked on a task (`TimeEntry` per task/day/person) from the item
+  ticket panel; personal daily total. Member+ logs their own time; Viewer read-only.
+- **App settings** (admin `/settings` page, key/value `Setting` table): a **daily-hours check**
+  option (enable + target hours/day) that drives an in-app banner showing today's logged time vs
+  target, and **SMTP** config (write-only password, never returned to the client) for future email.
 - **MCP server** (`mcp/`, standalone) exposing the app's operations as Model Context Protocol
   tools so Claude can drive it in natural language; authenticates by logging in with a
   configured account (role governs permissions), stdio transport. See `mcp/README.md`.
@@ -85,6 +90,8 @@ Monolithic **Next.js** (App Router): React front + Route Handlers (API) in one s
 | `Item` | id, boardId→Board, groupId→Group, name, position, createdAt | |
 | `CellValue` | id, itemId→Item, columnId→Column, value(JSON) | unique (itemId, columnId) |
 | `Member` | id, name, email(unique), passwordHash, role, active, avatarColor, createdAt | account + assignable person; referenced by `person` cell values, not an FK; `passwordHash` never returned by any API |
+| `TimeEntry` | id, itemId→Item, memberId→Member, minutes(Int), date("YYYY-MM-DD"), note, createdAt | one logged time entry; cascade-deleted with its item or member |
+| `Setting` | key(id), value(JSON) | app settings (`dailyCheck`, `smtp`); SMTP password stored here, never returned by any API (only `passSet` boolean) |
 
 Cascade deletes: Board → its Groups/Columns/Items/CellValues; Column → its CellValues;
 Item → its CellValues. Member deletion is handled in application code (unassign from all
@@ -153,6 +160,10 @@ Settings: `status {labels:[{id,label,color}]}` · `dropdown {options:[{id,label}
 - `POST /api/upload` (member+, multipart, size-limited), `GET /api/upload?id=` (any
   authenticated session, download).
 - `GET /api/people/[id]/items` (cross-board items for a member; any authenticated session).
+- `POST /api/time` (member+, logs the session user), `GET /api/time?itemId=`, `GET /api/time/mine?from=&to=`,
+  `DELETE /api/time/[id]` (own entry or admin).
+- `GET /api/settings/public` (auth → dailyCheck only), `GET/PUT /api/settings` (admin; SMTP password
+  write-only, never returned — only `passSet`).
 
 ## 8. Configuration
 

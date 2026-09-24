@@ -4,6 +4,14 @@ All notable changes to this project. See [`docs/SPECIFICATION.md`](docs/SPECIFIC
 for the current-state specification and [`docs/superpowers/`](docs/superpowers/) for the
 per-iteration design docs and plans.
 
+## v2.2 — Time tracking + app settings (2026-09-24)
+- **Time tracking**: log time on a task (`TimeEntry` per task/day/person) from the ticket panel —
+  minutes + date + note, running total, delete your own. Member+ logs their own time; Viewer read-only.
+- **App settings** (admin `/settings`, key/value `Setting` table): a **daily-hours check** (enable +
+  target hours/day) driving an in-app banner « Aujourd'hui : Xh / Nh », and **SMTP** config with a
+  write-only password (never returned by any API — only `passSet`).
+- New API: `/api/time*`, `/api/settings` + `/api/settings/public`.
+
 ## v2.1 — MCP server (2026-09-20)
 - **Standalone MCP server** (`mcp/`, `monday-clone-mcp-server`) so Claude can drive the app via
   tools mapped to the REST API: read boards/users/person-activity; add/edit/move/delete items;

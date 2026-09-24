@@ -18,6 +18,7 @@ Déployable en une commande via Docker, sur un VPS ou en local (macOS/Linux/Wind
    - Fiche ticket (édition complète)
    - Filtres (Personne / Statut / Groupe)
    - Focus personne / My Work
+   - Suivi du temps
    - Utilisateurs
    - Thème clair/sombre & mobile
 6. [Rôles & super-user (admin)](#6-rôles--super-user-admin)
@@ -179,6 +180,15 @@ assignables. Créer un compte, changer son rôle/mot de passe/statut actif, ou l
 nécessite les droits **admin** — voir [§6](#6-rôles--super-user-admin) pour le détail complet
 (les autres rôles voient une liste en lecture seule).
 
+### Suivi du temps
+Ouvrez une tâche (icône **⤢**) → section **« Temps »**. Indiquez le nombre de **minutes**
+travaillées (boutons rapides +15 / +30 / +60), la **date** (aujourd'hui par défaut) et une note
+facultative, puis **Ajouter**. Le total de la tâche s'affiche ; vous pouvez supprimer vos propres
+saisies. Les Lecteurs voient le total sans pouvoir saisir.
+
+Si votre organisation a activé la **vérification des heures** (voir §6), une petite bannière en
+haut du tableau rappelle votre temps du jour : « Aujourd'hui : 5h30 / 8h ».
+
 ### Thème & mobile
 - **🌙 / ☀️** en haut : bascule clair/sombre (mémorisé dans le navigateur). Par défaut, suit le réglage du système.
 - **Responsive** : sous 640 px de large, la Table devient des **cartes empilées**, le Calendrier une **liste agenda**, et la page Focus personne s'affiche en une seule colonne. Fonctionne sur téléphone comme sur ordinateur.
@@ -220,6 +230,14 @@ Le rôle courant est exposé par `GET /api/auth/me` →
 > les boards. Les permissions par board sont une évolution future (voir §13).
 
 ---
+
+### Paramètres (réservé au Superviseur)
+Lien **Paramètres** en haut de l'écran (visible par le Superviseur). Deux réglages simples :
+- **Suivi du temps** : cochez « Vérifier mes heures de travail chaque jour » et fixez un objectif
+  (ex. 8 h). Chaque utilisateur voit alors la bannière de rappel de son temps du jour.
+- **Envoi d'emails (SMTP)** : serveur, port, identifiant, mot de passe et adresse d'expéditeur.
+  Nécessaire pour les rappels par email (à venir). Laissez le mot de passe vide pour ne pas le
+  changer ; il n'est jamais réaffiché. Ces informations vous sont fournies par votre fournisseur d'email.
 
 ## 7. Sauvegarde & persistance
 
