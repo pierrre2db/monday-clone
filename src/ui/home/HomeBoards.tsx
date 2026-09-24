@@ -67,6 +67,11 @@ export default function HomeBoards({ initial }: { initial: Board[] }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", margin: "0 0 16px" }}>
           <span style={{ fontSize: 13, fontWeight: 600 }}>{me.name}</span>
           <Pill label={me.role} color={ROLE_COLORS[me.role] ?? "var(--text-muted)"} />
+          {isAdmin && (
+            <Link href="/settings" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
+              Paramètres
+            </Link>
+          )}
           <Button type="button" variant="ghost" onClick={logout}>Déconnexion</Button>
         </div>
       )}

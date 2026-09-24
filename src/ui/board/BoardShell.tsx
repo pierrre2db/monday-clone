@@ -10,6 +10,7 @@ import ItemDetailPanel from "./ItemDetailPanel";
 import Toolbar from "./Toolbar";
 import FilterBar from "./FilterBar";
 import MembersPanel from "./MembersPanel";
+import DailyHoursBanner from "./DailyHoursBanner";
 import Button from "@/ui/kit/Button";
 import ThemeToggle from "@/ui/kit/ThemeToggle";
 import Popover from "@/ui/kit/Popover";
@@ -290,9 +291,16 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
           <Link href="/people" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
             Focus personne
           </Link>
+          {isAdmin && (
+            <Link href="/settings" style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>
+              Paramètres
+            </Link>
+          )}
           <ThemeToggle />
         </div>
       </div>
+
+      <DailyHoursBanner canLog={canEdit} />
 
       <FilterBar board={board} members={members} filters={filters} onChange={setFilters} />
       {hiddenCount > 0 && (

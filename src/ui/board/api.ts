@@ -7,6 +7,11 @@ async function json<T>(res: Response): Promise<T> {
 
 export type Me = { id: string; name: string; email: string; role: string };
 
+export type DailyCheck = { enabled: boolean; targetHours: number };
+export type SmtpSafe = { host: string; port: number; user: string; from: string; secure: boolean; passSet: boolean };
+export type Settings = { dailyCheck: DailyCheck; smtp: SmtpSafe };
+export type PublicSettings = { dailyCheck: DailyCheck };
+
 export const api = {
   setCell: (itemId: string, columnId: string, value: Record<string, unknown>) =>
     fetch("/api/cells", { method: "PUT", headers: { "content-type": "application/json" },
@@ -54,4 +59,20 @@ export const api = {
   listItemTime: (itemId: string) =>
     fetch(`/api/time?itemId=${encodeURIComponent(itemId)}`).then(json) as Promise<TimeEntry[]>,
   deleteTimeEntry: (id: string) => fetch(`/api/time/${id}`, { method: "DELETE" }).then(json),
+  getSettings: () => fetch("/api/settings").then(json) as Promise<Settings>,
+  getPublicSettings: () => fetch("/api/settings/public").then(json) as Promise<PublicSettings>,
+  updateSettings: (data: {
+    dailyCheck?: { enabled: boolean; targetHours: number };
+    smtp?: { host?: string; port?: number; user?: string; from?: string; secure?: boolean; pass?: string };
+  }) =>
+    fetch("/api/settings", { method: "PUT", headers: { "content-type": "application/json" },
+      body: JSON.stringify(data) }).then(json) as Promise<Settings>,
+  // "Today" is computed on the client (local date), matching what the user sees —
+  // the server also defaults to its own today when from/to are omitted, but we pass
+  // it explicitly so from === to unambiguously means "today only".
+  myTimeToday: () => {
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return fetch(`/api/time/mine?from=${today}&to=${today}`).then(json) as Promise<{ entries: TimeEntry[]; totalMinutes: number }>;
+  },
 };
