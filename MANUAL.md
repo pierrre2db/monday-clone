@@ -29,6 +29,7 @@ Déployable en une commande via Docker, sur un VPS ou en local (macOS/Linux/Wind
 11. [Dépannage (FAQ)](#11-dépannage-faq)
 12. [Architecture technique](#12-architecture-technique)
 13. [Limites connues & feuille de route](#13-limites-connues--feuille-de-route)
+- [Annexe A — Configurer Gmail (SMTP)](#annexe-a--configurer-gmail-pour-lenvoi-demails-smtp)
 
 ---
 
@@ -375,6 +376,84 @@ Détails : voir `docs/superpowers/specs/` (spécifications) et `docs/superpowers
 - Automations (« quand statut = X → notifier / déplacer »)
 - Temps réel (websockets)
 - Réordonnancement lignes/colonnes, avatars images, recherche plein texte, sous-items
+
+---
+
+## Annexe A — Configurer Gmail pour l'envoi d'emails (SMTP)
+
+Cette annexe explique, pas à pas, comment brancher un compte Gmail pour que l'application
+puisse envoyer des emails (rappels de temps, notifications à venir). Réservé au **Superviseur**.
+
+### Pourquoi faut-il faire tout ça ?
+L'application n'envoie pas les emails « toute seule » : elle passe par un **serveur d'envoi
+(SMTP)** — ici celui de Gmail. Pour des raisons de sécurité, Google **n'autorise pas** une
+application à se connecter avec votre mot de passe Gmail habituel. Il faut donc :
+1. activer la **validation en 2 étapes** (MFA) sur le compte, puis
+2. générer un **mot de passe d'application** dédié, que l'on donne à l'application.
+
+Ainsi, l'application n'a jamais votre vrai mot de passe, et vous pouvez révoquer son accès à tout
+moment sans changer votre mot de passe principal.
+
+### Recommandation : créez un compte Gmail dédié
+Plutôt que d'utiliser votre boîte personnelle, **créez un nouveau compte Gmail** réservé à
+l'application (ex. `monentreprise.taches@gmail.com`). Avantages : les emails partent d'une adresse
+« officielle », et si le mot de passe d'application fuite, votre compte personnel n'est pas touché.
+- Créer un compte : **accounts.google.com/signup**
+
+### Les deux « mots de passe » — à ne pas confondre
+| | À quoi il sert | Où on l'utilise |
+|---|---|---|
+| **Mot de passe du compte Google** | se connecter à Gmail (personnel) | **jamais** dans l'application |
+| **Mot de passe d'application** (16 caractères) | laisser l'application envoyer des emails | **uniquement** dans l'app (champ « Mot de passe » SMTP) |
+
+### Étape 1 — Activer la validation en 2 étapes (MFA)
+1. Connectez-vous au compte Gmail dédié.
+2. Allez sur **myaccount.google.com/security**.
+3. Section « Comment vous connecter à Google » → **Validation en 2 étapes** → **Activer**
+   (suivez les instructions : numéro de téléphone ou application d'authentification).
+- Tant que la 2FA n'est pas activée, l'option « mots de passe d'application » **n'apparaît pas**.
+
+### Étape 2 — Créer le mot de passe d'application
+1. Allez sur **myaccount.google.com/apppasswords**.
+2. Donnez un nom (ex. « Monday Clone ») → **Créer**.
+3. Google affiche **16 caractères** (ex. `abcd efgh ijkl mnop`). **Copiez-les** (sans les espaces).
+   C'est ce mot de passe que vous mettrez dans l'application. (Il ne s'affichera plus après.)
+
+### Étape 3 — Renseigner dans l'application (Paramètres → Envoi d'emails)
+| Champ | Valeur |
+|---|---|
+| Serveur (hôte) | `smtp.gmail.com` |
+| Port | `587` |
+| Identifiant | l'adresse Gmail complète (ex. `monentreprise.taches@gmail.com`) |
+| Mot de passe | le **mot de passe d'application** (16 caractères) — pas le mot de passe Gmail |
+| Adresse d'expéditeur | la même adresse Gmail |
+| Connexion sécurisée (TLS) | **décochée** (le port 587 chiffre via STARTTLS) |
+
+*(Variante : port `465` avec la case TLS **cochée**.)*
+
+Puis **Enregistrer**, et **Envoyer un email de test** pour vérifier. Le test arrive dans la boîte
+de l'admin connecté (pensez à regarder les **spams** au premier envoi).
+
+### Où trouver les liens rapidement
+- Sécurité du compte : **myaccount.google.com/security**
+- Mots de passe d'application : **myaccount.google.com/apppasswords**
+- Créer un compte : **accounts.google.com/signup**
+
+### Cas Google Workspace (adresse professionnelle @votredomaine)
+Deux possibilités :
+- **Simple** : même méthode que ci-dessus avec `smtp.gmail.com` + mot de passe d'application (si
+  l'administrateur du domaine autorise les mots de passe d'application).
+- **Relais SMTP** (gros volume) : serveur `smtp-relay.gmail.com` (port 587, TLS), à **activer par
+  l'administrateur** dans la console Google (Apps → Gmail → Acheminement / Relais SMTP).
+
+### En cas de problème
+- **« Échec d'authentification »** → vous avez mis le mot de passe Gmail au lieu du mot de passe
+  d'application, ou la 2FA n'est pas activée.
+- **« Mots de passe des applications » introuvable** → activez d'abord la validation en 2 étapes.
+- **L'email n'arrive pas** → vérifiez les spams ; Gmail limite ~500 envois/jour (pour plus, utilisez
+  un service dédié comme Brevo, Mailgun ou SendGrid — même type de configuration SMTP).
+- **Ne jamais** communiquer ces mots de passe par email/chat ; en cas de doute, révoquez le mot de
+  passe d'application sur `myaccount.google.com/apppasswords` et régénérez-en un.
 
 ---
 
