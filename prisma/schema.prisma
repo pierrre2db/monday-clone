@@ -45,9 +45,10 @@ model Item {
   name      String
   position  Int
   createdAt DateTime @default(now())
-  board     Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  group     Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  cells     CellValue[]
+  board       Board       @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  group       Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  cells       CellValue[]
+  timeEntries TimeEntry[]
   @@index([boardId])
   @@index([groupId])
 }
@@ -72,4 +73,25 @@ model Member {
   active       Boolean  @default(true)
   avatarColor  String   @default("#00c875")
   createdAt    DateTime @default(now())
+  timeEntries  TimeEntry[]
+}
+
+model TimeEntry {
+  id        String   @id @default(cuid())
+  itemId    String
+  memberId  String
+  minutes   Int
+  date      String   // "YYYY-MM-DD"
+  note      String   @default("")
+  createdAt DateTime @default(now())
+  item      Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  member    Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  @@index([itemId])
+  @@index([memberId])
+  @@index([date])
+}
+
+model Setting {
+  key   String @id
+  value Json
 }
