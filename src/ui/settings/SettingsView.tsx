@@ -19,6 +19,9 @@ export default function SettingsView() {
   const [smtp, setSmtp] = useState<SmtpForm>({ host: "", port: 587, user: "", from: "", secure: false, pass: "" });
   const [passSet, setPassSet] = useState(false);
 
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
   useEffect(() => {
     api.getSettings()
       .then((s: Settings) => {
@@ -57,6 +60,19 @@ export default function SettingsView() {
       setError((e as Error).message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function testEmail() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await api.testEmail();
+      setTestResult({ ok: true, message: `✓ Email de test envoyé à ${result.to}. Vérifiez votre boîte (et les spams).` });
+    } catch (e) {
+      setTestResult({ ok: false, message: (e as Error).message });
+    } finally {
+      setTesting(false);
     }
   }
 
@@ -184,6 +200,25 @@ export default function SettingsView() {
               Connexion sécurisée (TLS)
             </label>
           </div>
+
+          <div className="settings-row" style={{ marginTop: 12, flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+            <Button type="button" variant="ghost" disabled={testing} onClick={testEmail}>
+              {testing ? "Envoi…" : "Envoyer un email de test"}
+            </Button>
+            <span className="settings-field-hint">Enregistrez d&apos;abord vos réglages, puis testez.</span>
+          </div>
+          {testResult && (
+            <p
+              style={{
+                marginTop: 8,
+                color: testResult.ok ? "var(--c-green, #00c875)" : "var(--c-red)",
+                fontSize: 13,
+                fontWeight: 600,
+              }}
+            >
+              {testResult.message}
+            </p>
+          )}
         </section>
 
         <div className="settings-footer">

@@ -67,6 +67,8 @@ export const api = {
   }) =>
     fetch("/api/settings", { method: "PUT", headers: { "content-type": "application/json" },
       body: JSON.stringify(data) }).then(json) as Promise<Settings>,
+  testEmail: () =>
+    fetch("/api/settings/test-email", { method: "POST" }).then(json) as Promise<{ ok: boolean; to: string }>,
   // "Today" is computed on the client (local date), matching what the user sees —
   // the server also defaults to its own today when from/to are omitted, but we pass
   // it explicitly so from === to unambiguously means "today only".
