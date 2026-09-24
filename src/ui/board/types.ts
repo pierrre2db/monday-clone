@@ -11,3 +11,13 @@ export type BoardFull = {
 export type Role = "admin" | "member" | "viewer";
 export type Member = { id: string; name: string; email: string; role: Role; active: boolean; avatarColor: string };
 export type Filters = { memberIds: string[]; labelIds: string[]; groupIds: string[] };
+export type TimeEntry = {
+  id: string;
+  itemId: string;
+  memberId: string;
+  memberName: string;
+  minutes: number;
+  date: string;
+  note: string;
+  createdAt: string;
+};

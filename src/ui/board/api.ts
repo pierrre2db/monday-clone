@@ -1,3 +1,5 @@
+import type { TimeEntry } from "./types";
+
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? res.statusText);
   return res.json();
@@ -44,4 +46,12 @@ export const api = {
   getMe: () =>
     fetch("/api/auth/me").then(json) as Promise<{ authenticated: boolean; user: Me | null }>,
   logout: () => fetch("/api/auth", { method: "DELETE" }).then(json),
+  // Note: the POST response is the raw created row (no memberName join), unlike
+  // listItemTime below — callers should refetch listItemTime after adding.
+  addTime: (itemId: string, data: { minutes: number; date?: string; note?: string }) =>
+    fetch("/api/time", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ itemId, ...data }) }).then(json),
+  listItemTime: (itemId: string) =>
+    fetch(`/api/time?itemId=${encodeURIComponent(itemId)}`).then(json) as Promise<TimeEntry[]>,
+  deleteTimeEntry: (id: string) => fetch(`/api/time/${id}`, { method: "DELETE" }).then(json),
 };

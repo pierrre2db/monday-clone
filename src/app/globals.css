@@ -980,6 +980,23 @@ textarea {
   min-width: 0;
 }
 
+.time-entry-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.time-entry-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
 .item-panel-footer {
   padding: 14px 18px 20px;
   border-top: 1px solid var(--border);

@@ -311,6 +311,8 @@ export default function BoardShell({ initialBoard, members: initialMembers }: { 
           board={board}
           members={members}
           canEdit={canEdit}
+          meId={me?.id}
+          isAdmin={isAdmin}
           onClose={() => setOpenItemId(null)}
           saveCell={saveCell}
           renameItem={renameItem}
