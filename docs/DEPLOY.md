@@ -73,8 +73,47 @@ Puis, dans l'app : change le mot de passe admin (Utilisateurs → ✎) et config
   add_header X-Content-Type-Options "nosniff" always;
   ```
 
-## Mettre à jour plus tard
+## Mettre à jour le service (après une modif du code)
+
+Déploiement basé sur **Git + Docker** → une mise à jour = **une commande**, sans rien reconfigurer.
+
+**1. Sur la machine de dev** — pousser les changements :
 ```bash
-cd monday-clone && ./scripts/deploy.sh   # git pull + rebuild + restart (données conservées)
+git add -A && git commit -m "ma modif" && git push
 ```
-Les données vivent dans les volumes Docker `pgdata` (base) et `uploads` (fichiers).
+
+**2. Sur le VPS** — récupérer et redéployer :
+```bash
+cd ~/monday-clone && ./scripts/deploy.sh
+# = git pull + docker compose up -d --build + restart
+```
+(`./scripts/deploy.sh --seed` seulement au tout premier install.)
+
+### Ce qui est conservé automatiquement (rien à refaire)
+| Élément | Au redéploiement |
+| --- | --- |
+| Données (boards, tickets, temps) | conservées — volume `pgdata` |
+| Fichiers uploadés | conservés — volume `uploads` |
+| `.env` (admin, `SESSION_SECRET`, SMTP) | gardé tel quel |
+| DNS + Proxy Host NPM + certificat SSL | inchangés |
+| Migrations base de données | appliquées **automatiquement** au démarrage du conteneur |
+
+### Downtime
+Build (~1–2 min) puis un **court redémarrage** du conteneur `app` (quelques secondes) ;
+Postgres n'est pas redémarré. Les données survivent (volumes).
+
+### Seul cas particulier — nouvelle variable d'environnement
+Si une future version introduit une nouvelle variable, ajoute-la **une fois** dans `.env`
+avant `./scripts/deploy.sh`. Sinon, rien à changer.
+
+### Revenir en arrière (rollback)
+```bash
+cd ~/monday-clone
+git log --oneline -5           # repérer le commit précédent
+git checkout <commit>          # ou: git reset --hard <commit>
+docker compose up -d --build
+```
+(les données restent dans les volumes).
+
+> Les données vivent dans les volumes Docker `pgdata` (base) et `uploads` (fichiers) —
+> un `docker compose down` les conserve, seul `down -v` les supprime.
