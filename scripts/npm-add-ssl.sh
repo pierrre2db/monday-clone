@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Request a Let's Encrypt certificate for a domain and attach it (Force SSL + HTTP/2)
-# to its existing Nginx Proxy Manager proxy host. Run on the VPS.
+# Add a fresh Let's Encrypt certificate to an EXISTING Nginx Proxy Manager proxy host,
+# the same way the NPM UI's "Request a new SSL Certificate" does (inline on the host).
+# Run on the VPS AFTER the proxy host exists (setup-npm-proxy.sh with CERT_ID=0).
 # Usage: bash scripts/npm-add-ssl.sh <domain> [letsencrypt_email]
-#   bash scripts/npm-add-ssl.sh project.dedobbeleer.online pierre2db@gmail.com
 set -euo pipefail
 
 DOMAIN="${1:?domaine requis, ex: project.dedobbeleer.online}"
@@ -17,35 +17,36 @@ TOKEN=$(curl -fsS -X POST "$NPM_URL/api/tokens" -H 'Content-Type: application/js
 [ -n "$TOKEN" ] || { echo "Auth NPM échouée."; exit 1; }
 echo "✓ Authentifié."
 
-echo "→ Demande d'un certificat Let's Encrypt pour $DOMAIN (peut prendre ~15 s)…"
-CODE=$(curl -sS -o /tmp/npmcert.json -w '%{http_code}' -X POST "$NPM_URL/api/nginx/certificates" \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"provider\":\"letsencrypt\",\"nice_name\":\"$DOMAIN\",\"domain_names\":[\"$DOMAIN\"],
-       \"meta\":{\"letsencrypt_email\":\"$LE_EMAIL\",\"letsencrypt_agree\":true,\"dns_challenge\":false}}")
-CERT_ID=$(jq -r '.id // empty' /tmp/npmcert.json 2>/dev/null || true)
+HOST_ID=$(curl -fsS "$NPM_URL/api/nginx/proxy-hosts" -H "Authorization: Bearer $TOKEN" \
+  | jq -r --arg d "$DOMAIN" '.[] | select(.domain_names|index($d)) | .id' | head -1)
+[ -n "$HOST_ID" ] || { echo "❌ Aucun Proxy Host pour $DOMAIN. Crée-le d'abord : bash scripts/setup-npm-proxy.sh $DOMAIN (CERT_ID=0)"; exit 1; }
+echo "✓ Proxy Host trouvé (id $HOST_ID)."
+
+HOST=$(curl -fsS "$NPM_URL/api/nginx/proxy-hosts/$HOST_ID" -H "Authorization: Bearer $TOKEN")
+PAYLOAD=$(echo "$HOST" | jq --arg em "$LE_EMAIL" '{
+  domain_names, forward_scheme, forward_host, forward_port,
+  access_list_id: (.access_list_id // 0),
+  block_exploits: (.block_exploits // true),
+  caching_enabled: (.caching_enabled // false),
+  allow_websocket_upgrade: (.allow_websocket_upgrade // true),
+  advanced_config: (.advanced_config // ""),
+  locations: (.locations // []),
+  hsts_enabled: false, hsts_subdomains: false,
+  http2_support: true, ssl_forced: true,
+  certificate_id: "new",
+  meta: ((.meta // {}) + {letsencrypt_email:$em, letsencrypt_agree:true, dns_challenge:false})
+}')
+
+echo "→ Demande du certificat Let's Encrypt + activation SSL sur le host (peut prendre ~20 s)…"
+CODE=$(curl -sS -o /tmp/npmssl.json -w '%{http_code}' -X PUT "$NPM_URL/api/nginx/proxy-hosts/$HOST_ID" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d "$PAYLOAD")
 if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then
   echo "❌ NPM a répondu HTTP $CODE. Détail :"
-  jq . /tmp/npmcert.json 2>/dev/null || cat /tmp/npmcert.json
+  jq . /tmp/npmssl.json 2>/dev/null || cat /tmp/npmssl.json
   echo
-  echo "Causes fréquentes : un certificat existe déjà pour ce domaine, DNS pas encore propagé, ou port 80 injoignable."
-  echo "Certificats déjà présents pour ce domaine :"
-  curl -fsS "$NPM_URL/api/nginx/certificates" -H "Authorization: Bearer $TOKEN" \
-    | jq -r --arg d "$DOMAIN" '.[] | select(.domain_names|index($d)) | "  id=\(.id)  \(.nice_name)"' || true
+  echo "Si l'erreur parle du challenge/HTTP : vérifie que http://$DOMAIN répond (port 80 ouvert + DNS OK)."
   exit 1
 fi
-[ -n "$CERT_ID" ] || { echo "❌ Pas d'id de certificat dans la réponse."; cat /tmp/npmcert.json; exit 1; }
-echo "✓ Certificat créé (id $CERT_ID)."
-
-echo "→ Recherche du Proxy Host $DOMAIN…"
-HOST_ID=$(curl -fsS "$NPM_URL/api/nginx/proxy-hosts" -H "Authorization: Bearer $TOKEN" \
-  | jq -r --arg d "$DOMAIN" '.[] | select(.domain_names | index($d)) | .id' | head -1)
-[ -n "$HOST_ID" ] || { echo "❌ Aucun Proxy Host pour $DOMAIN. Crée-le d'abord (setup-npm-proxy.sh)."; exit 1; }
-
-echo "→ Attache le certificat + Force SSL + HTTP/2 au host $HOST_ID…"
-curl -fsS -X PUT "$NPM_URL/api/nginx/proxy-hosts/$HOST_ID" \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d "{\"certificate_id\":$CERT_ID,\"ssl_forced\":true,\"http2_support\":true,\"hsts_enabled\":false}" \
-  | jq '{id, domain_names, ssl_forced, http2_support, certificate_id}'
-
+jq '{id, domain_names, ssl_forced, http2_support, certificate_id}' /tmp/npmssl.json 2>/dev/null || cat /tmp/npmssl.json
 echo
-echo "✅ SSL activé. Teste :  curl -sI https://$DOMAIN | head -3"
+echo "✅ Fait. Teste :  curl -sI https://$DOMAIN | head -3"
