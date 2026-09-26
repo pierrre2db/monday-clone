@@ -18,16 +18,22 @@ TOKEN=$(curl -fsS -X POST "$NPM_URL/api/tokens" -H 'Content-Type: application/js
 echo "✓ Authentifié."
 
 echo "→ Demande d'un certificat Let's Encrypt pour $DOMAIN (peut prendre ~15 s)…"
-CERT=$(curl -fsS -X POST "$NPM_URL/api/nginx/certificates" \
+CODE=$(curl -sS -o /tmp/npmcert.json -w '%{http_code}' -X POST "$NPM_URL/api/nginx/certificates" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d "{\"provider\":\"letsencrypt\",\"nice_name\":\"$DOMAIN\",\"domain_names\":[\"$DOMAIN\"],
        \"meta\":{\"letsencrypt_email\":\"$LE_EMAIL\",\"letsencrypt_agree\":true,\"dns_challenge\":false}}")
-CERT_ID=$(echo "$CERT" | jq -r '.id // empty')
-if [ -z "$CERT_ID" ]; then
-  echo "❌ Échec de la création du certificat. Réponse :"; echo "$CERT" | jq . 2>/dev/null || echo "$CERT"
-  echo "Vérifie que le DNS $DOMAIN pointe sur ce serveur et que le port 80 est ouvert."
+CERT_ID=$(jq -r '.id // empty' /tmp/npmcert.json 2>/dev/null || true)
+if [ "$CODE" != "200" ] && [ "$CODE" != "201" ]; then
+  echo "❌ NPM a répondu HTTP $CODE. Détail :"
+  jq . /tmp/npmcert.json 2>/dev/null || cat /tmp/npmcert.json
+  echo
+  echo "Causes fréquentes : un certificat existe déjà pour ce domaine, DNS pas encore propagé, ou port 80 injoignable."
+  echo "Certificats déjà présents pour ce domaine :"
+  curl -fsS "$NPM_URL/api/nginx/certificates" -H "Authorization: Bearer $TOKEN" \
+    | jq -r --arg d "$DOMAIN" '.[] | select(.domain_names|index($d)) | "  id=\(.id)  \(.nice_name)"' || true
   exit 1
 fi
+[ -n "$CERT_ID" ] || { echo "❌ Pas d'id de certificat dans la réponse."; cat /tmp/npmcert.json; exit 1; }
 echo "✓ Certificat créé (id $CERT_ID)."
 
 echo "→ Recherche du Proxy Host $DOMAIN…"
