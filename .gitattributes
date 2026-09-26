@@ -1,0 +1,21 @@
+# Normalize line endings so scripts work when cloned on Windows.
+* text=auto eol=lf
+
+# Shell scripts and JS must stay LF (they run in Linux containers / on the VPS).
+*.sh   text eol=lf
+*.mjs  text eol=lf
+*.js   text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+Dockerfile text eol=lf
+
+# Binary assets — never touch line endings.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.docx binary
+*.pdf  binary
