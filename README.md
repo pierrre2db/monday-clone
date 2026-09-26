@@ -89,6 +89,8 @@ an HTTPS reverse proxy in front (see the manual).
 - **[Specification (docs/SPECIFICATION.md)](docs/SPECIFICATION.md)** — current-state spec:
   scope, architecture, data model, auth/roles, API surface. The source of truth.
 - **[Changelog (CHANGELOG.md)](CHANGELOG.md)** — version history (v1.0 → v2.0).
+- **[Deploy guide (docs/DEPLOY.md)](docs/DEPLOY.md)** — host on a VPS behind Nginx Proxy Manager
+  (scripts: `scripts/deploy.sh`, `scripts/setup-npm-proxy.sh`).
 - **[docs/](docs/README.md)** — how the documentation base is organized (living docs vs
   historical iteration records).
 - **[TODO.md](TODO.md)** — backlog / roadmap.
